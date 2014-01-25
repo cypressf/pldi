@@ -3,6 +3,8 @@
  *
  * Code for HOMEWORK 1
  *
+ * Cypress
+ * iamcypress@gmail.com
  *)
 
 
@@ -33,7 +35,9 @@ fun lcm a b =
     if (gcd a b) = 0 then 0
     else (abs (a * b)) div (gcd a b)
 
-fun exp a n = raise Fail "exp not implemented"
+fun exp a n =
+    if n <= 0 then 1
+    else a * (exp a (n-1))
 
 fun tetra a n = raise Fail "tetra not implemented"
 
