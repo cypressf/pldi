@@ -39,7 +39,11 @@ fun exp a n =
     if n <= 0 then 1
     else a * (exp a (n-1))
 
-fun tetra a n = raise Fail "tetra not implemented"
+(* Note: because we treat n < 0 as n = 0, some
+    strange behavior arises when a < 0 and n > 1. *)
+fun tetra a n =
+    if n <= 0 then 1
+    else exp a (tetra a (n-1))
 
 
 
