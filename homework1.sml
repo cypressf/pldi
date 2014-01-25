@@ -49,7 +49,7 @@ fun tetra a n =
 
 (* Question 2 *)
 
-fun sum xs = raise Fail "sum not implemented"
+fun sum xs = List.foldr (fn (next, total) => total + next) 0 xs
 
 fun prod xs = raise Fail "prod not implemented"
 
