@@ -29,7 +29,9 @@ fun gcd a b =
     else if (abs b) > (abs a) then gcd a (b mod a)
     else abs a
 
-fun lcm a b = raise Fail "lcm not implemented"
+fun lcm a b = 
+    if (gcd a b) = 0 then 0
+    else (abs (a * b)) div (gcd a b)
 
 fun exp a n = raise Fail "exp not implemented"
 
