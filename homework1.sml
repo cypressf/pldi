@@ -62,7 +62,7 @@ fun every_other xs =
         helper xs [] true
     end
 
-fun flatten xss = raise Fail "flatten not implemented"
+fun flatten xss = List.foldr (fn (next, total) =>  next @ total) [] xss
 
 fun heads xss = raise Fail "heads not implemented"
 
