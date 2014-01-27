@@ -51,9 +51,16 @@ fun tetra a n =
 
 fun sum xs = List.foldr (fn (next, total) => total + next) 0 xs
 
-fun prod xs = raise Fail "prod not implemented"
+fun prod xs = List.foldr (fn (next, total) => total * next) 1 xs
 
-fun every_other xs = raise Fail "every_other not implemented"
+(*fun every_other xs =
+    let
+        fun helper x::xs res true = helper xs x::res false
+            | helper [] res _ = res
+            | helper x::xs res false = helper xs res true
+    in
+        helper xs [] true
+    end*)
 
 fun flatten xss = raise Fail "flatten not implemented"
 
