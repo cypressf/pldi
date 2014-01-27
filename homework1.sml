@@ -109,7 +109,19 @@ datatype expr = EInt of int
         | ENeg of expr
         | EDiv of expr * expr
 
-fun simplifyRat r = raise Fail "simplifyRat not implemented"
+fun simplifyRat (num, den) = 
+    let
+        val divisor = gcd num den
+        val num = (num div divisor)
+        val den = (den div divisor)
+    in
+        if den = 1 then
+            VInt num
+        else if den < 0 then
+            VRat (~num, ~den)
+        else
+            VRat (num, den)
+    end
 
 fun addRat r s = raise Fail "addRat not implemented"
 
