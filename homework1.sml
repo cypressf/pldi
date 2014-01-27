@@ -139,5 +139,5 @@ fun eval (EInt i) = VInt i
   | eval (EMul (e,f)) = applyMul (eval e) (eval f)
   | eval (ENeg e) = applyNeg (eval e)
   | eval (EVec v) = VVec v
-  | eval (EMat m) = raise Fail "eval/EMat not implemented"
+  | eval (EMat m) = VMat m
   | eval (EDiv (e,f)) = raise Fail "eval/EDiv not implemented"
