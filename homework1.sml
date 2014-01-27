@@ -53,14 +53,14 @@ fun sum xs = List.foldr (fn (next, total) => total + next) 0 xs
 
 fun prod xs = List.foldr (fn (next, total) => total * next) 1 xs
 
-(*fun every_other xs =
+fun every_other xs =
     let
-        fun helper x::xs res true = helper xs x::res false
+        fun helper (x::xs) res true = helper xs (res@[x]) false
             | helper [] res _ = res
-            | helper x::xs res false = helper xs res true
+            | helper (x::xs) res false = helper xs res true
     in
         helper xs [] true
-    end*)
+    end
 
 fun flatten xss = raise Fail "flatten not implemented"
 
@@ -81,18 +81,18 @@ exception TypeError of string
 exception DivisionByZero of string
 
 datatype value = VInt of int
-	       | VVec of int list
-	       | VMat of int list list
-	       | VRat of int * int
+         | VVec of int list
+         | VMat of int list list
+         | VRat of int * int
 
 datatype expr = EInt of int
-	      | EVec of int list
-	      | EMat of int list list
-	      | EAdd of expr * expr
-	      | ESub of expr * expr
-	      | EMul of expr * expr
-	      | ENeg of expr
-	      | EDiv of expr * expr
+        | EVec of int list
+        | EMat of int list list
+        | EAdd of expr * expr
+        | ESub of expr * expr
+        | EMul of expr * expr
+        | ENeg of expr
+        | EDiv of expr * expr
 
 fun simplifyRat r = raise Fail "simplifyRat not implemented"
 
