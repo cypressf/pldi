@@ -119,15 +119,19 @@ fun negRat r = raise Fail "negRat not implemented"
 
 fun applyAdd (VInt i) (VInt j) = VInt (i+j)
   | applyAdd (VVec v) (VVec w) = VVec (addVec v w)
+  | applyAdd (VMat m1) (VMat m2) = VMat (addMat m1 m2)
   | applyAdd _ _ = raise TypeError "applyAdd"
 
 fun applyMul (VInt i) (VInt j) = VInt (i*j)
   | applyMul (VInt i) (VVec v) = VVec (scaleVec i v)
   | applyMul (VVec v) (VVec w) = VInt (inner v w)
+  | applyMul (VMat m) (VInt i) = VMat (scaleMat i m)
+  | applyMul (VInt i) (VMat m) = VMat (scaleMat i m)
   | applyMul _ _ = raise TypeError "applyMul"
 
 fun applyNeg (VInt i) = VInt (~ i)
   | applyNeg (VVec v) = VVec (scaleVec ~1 v)
+  | applyNeg (VMat m) = VMat (scaleMat ~1 m)
   | applyNeg _ = raise TypeError "applyNeg"
 
 fun applySub a b = applyAdd a (applyNeg b)
