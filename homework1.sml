@@ -64,7 +64,14 @@ fun every_other xs =
 
 fun flatten xss = List.foldr (fn (next, total) =>  next @ total) [] xss
 
-fun heads xss = raise Fail "heads not implemented"
+fun heads xss =
+    List.foldr
+    (fn (next, total) =>
+        case next of
+            [] => total
+            | hd::tl => hd::total)
+    []
+    xss
 
 fun tails xss = raise Fail "tails not implemented"
 
