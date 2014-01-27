@@ -123,8 +123,9 @@ fun simplifyRat (num, den) =
             VRat (num, den)
     end
 
-fun addRat r s = raise Fail "addRat not implemented"
-
+fun addRat (rnum, rden) (snum, sden) = 
+    simplifyRat (rnum * sden + snum * rden, rden * sden)
+    
 fun mulRat r s = raise Fail "mulRat not implemented"
 
 fun negRat r = raise Fail "negRat not implemented"
