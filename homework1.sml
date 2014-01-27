@@ -5,6 +5,7 @@
  *
  * Cypress
  * iamcypress@gmail.com
+ * I used List.foldr in Question 2.
  *)
 
 
@@ -73,7 +74,14 @@ fun heads xss =
     []
     xss
 
-fun tails xss = raise Fail "tails not implemented"
+fun tails xss = 
+    List.foldr
+    (fn (next, total) =>
+        case next of
+            [] => total
+            | hd::tl => [tl] @ total)
+    []
+    xss
 
 fun scaleMat a m = raise Fail "scaleMat not implemented"
 
