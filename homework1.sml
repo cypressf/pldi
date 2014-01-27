@@ -103,6 +103,7 @@ datatype value = VInt of int
 datatype expr = EInt of int
         | EVec of int list
         | EMat of int list list
+        | ERat of int * int
         | EAdd of expr * expr
         | ESub of expr * expr
         | EMul of expr * expr
@@ -125,14 +126,23 @@ fun simplifyRat (num, den) =
 
 fun addRat (rnum, rden) (snum, sden) = 
     simplifyRat (rnum * sden + snum * rden, rden * sden)
-    
-fun mulRat r s = raise Fail "mulRat not implemented"
 
-fun negRat r = raise Fail "negRat not implemented"
+fun mulRat (rnum, rden) (snum, sden) =
+    simplifyRat (rnum * snum, rden * sden)
+
+
+fun negRat r = mulRat (~1,1) r
+
+fun inverse (VRat (num, den)) = simplifyRat (den, num)
+  | inverse (VInt i) = simplifyRat (1, i)
+  | inverse _ = raise TypeError "inverse"
 
 fun applyAdd (VInt i) (VInt j) = VInt (i+j)
   | applyAdd (VVec v) (VVec w) = VVec (addVec v w)
   | applyAdd (VMat m1) (VMat m2) = VMat (addMat m1 m2)
+  | applyAdd (VRat r) (VRat s) = addRat r s
+  | applyAdd (VRat r) (VInt i) = addRat r (i, 1)
+  | applyAdd (VInt i) (VRat r) = addRat r (i, 1)
   | applyAdd _ _ = raise TypeError "applyAdd"
 
 fun applyMul (VInt i) (VInt j) = VInt (i*j)
@@ -140,15 +150,19 @@ fun applyMul (VInt i) (VInt j) = VInt (i*j)
   | applyMul (VVec v) (VVec w) = VInt (inner v w)
   | applyMul (VMat m) (VInt i) = VMat (scaleMat i m)
   | applyMul (VInt i) (VMat m) = VMat (scaleMat i m)
+  | applyMul (VRat r) (VRat s) = mulRat r s
+  | applyMul (VRat r) (VInt i) = mulRat r (i, 1)
+  | applyMul (VInt i) (VRat r) = mulRat r (i, 1)
   | applyMul _ _ = raise TypeError "applyMul"
 
 fun applyNeg (VInt i) = VInt (~ i)
   | applyNeg (VVec v) = VVec (scaleVec ~1 v)
   | applyNeg (VMat m) = VMat (scaleMat ~1 m)
-  | applyNeg _ = raise TypeError "applyNeg"
+  | applyNeg (VRat r) = negRat r
 
 fun applySub a b = applyAdd a (applyNeg b)
 
+fun applyDiv n m = applyMul n (inverse m)
 
 fun eval (EInt i) = VInt i
   | eval (EAdd (e,f)) = applyAdd (eval e) (eval f)
@@ -156,5 +170,6 @@ fun eval (EInt i) = VInt i
   | eval (EMul (e,f)) = applyMul (eval e) (eval f)
   | eval (ENeg e) = applyNeg (eval e)
   | eval (EVec v) = VVec v
+  | eval (ERat r) = VRat r
   | eval (EMat m) = VMat m
-  | eval (EDiv (e,f)) = raise Fail "eval/EDiv not implemented"
+  | eval (EDiv (e,f)) = applyDiv (eval e) (eval f)
