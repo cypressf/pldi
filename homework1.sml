@@ -83,7 +83,7 @@ fun tails xss =
     []
     xss
 
-fun scaleMat a m = raise Fail "scaleMat not implemented"
+fun scaleMat a m = List.map (fn v => scaleVec a v) m
 
 fun addMat m1 m2 = raise Fail "addMat not implemented"
 
