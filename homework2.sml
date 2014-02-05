@@ -75,7 +75,8 @@ fun applySub v1 v2 = applyAdd v1 (applyNeg v2)
 
 fun applyPair v1 v2 = VPair (v1, v2)
 
-fun applyFirst _ = unimplemented "applyFirst"
+fun applyFirst (VPair (v1, v2)) = v1
+  | applyFirst _ = evalError "You can only get first elements of VPairs"
 
 fun applySecond _ = unimplemented "applySecond"
 
