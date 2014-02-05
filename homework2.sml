@@ -73,7 +73,7 @@ fun applySub v1 v2 = applyAdd v1 (applyNeg v2)
 
 (* COMPLETE THE FOLLOWING FOR QUESTION 1 *)
 
-fun applyPair _ _ = unimplemented "applyPair"
+fun applyPair v1 v2 = VPair (v1, v2)
 
 fun applyFirst _ = unimplemented "applyFirst"
 
