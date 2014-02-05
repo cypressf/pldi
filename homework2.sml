@@ -100,6 +100,9 @@ fun applyTail _ = unimplemented "applyTail"
 
 (* Substitution function -- COMPLETE the missing cases *)
 
+fun isInBnds id bnds =
+  List.foldr (fn ((id',e), total) => total orelse id'=id) false bnds
+
 fun subst (EVal v) id e = EVal v
   | subst (EAdd (e1,e2)) id e = EAdd (subst e1 id e, subst e2 id e)
   | subst (ESub (e1,e2)) id e = ESub (subst e1 id e, subst e2 id e)
@@ -124,9 +127,15 @@ fun subst (EVal v) id e = EVal v
   | subst (EPair (e1,e2)) id e = EPair (subst e1 id e, subst e2 id e)
   | subst (EFirst e1) id e = EFirst (subst e1 id e)
   | subst (ESecond e1) id e = ESecond (subst e1 id e)
-  | subst (ESlet (bnds,e1)) id e = unimplemented "subst/ESlet"
+  | subst (ESlet (bnds,e1)) id e =
+    if (isInBnds id bnds) then ESlet ((substBnds bnds id e), e1)
+    else ESlet ((substBnds bnds id e), (subst e1 id e))
+
   | subst (ECallE (e1,e2)) id e = unimplemented "subst/ECallE"
 
+and substBnds [] id e = []
+  | substBnds ((id', e')::tl) id e =
+      (id', (subst e' id e))::(substBnds tl id e)
 
 
 
@@ -153,7 +162,7 @@ fun eval _ (EVal v) = v
   | eval fenv (EIdent id) = unimplemented "eval/EIdent"
   | eval fenv (ECall (name,e)) = 
                 evalCall fenv (lookup name fenv) (eval fenv e)
-  | eval fenv (ESlet (bnds,f)) = unimplemented "eval/ESlet"
+  | eval fenv (ESlet (bnds,e)) = evalSLet fenv (evalBindings fenv bnds) e
   | eval fenv (ECons (e1,e2)) = unimplemented "eval/ECons"
   | eval fenv (EIsEmpty e) = unimplemented "eval/EIsEmpty"
   | eval fenv (EHead e) = unimplemented "eval/EHead"
@@ -172,7 +181,11 @@ and evalIf fenv (VBool true) ethen eelse = eval fenv ethen
 
 and evalLet fenv id v body = eval fenv (subst body id (EVal v))
 
+and evalBindings fenv [] = []
+  | evalBindings fenv ((id, e)::tl) = (id, (EVal (eval fenv e)))::(evalBindings fenv tl)
 
+and evalSLet fenv [] e = eval fenv e
+  | evalSLet fenv ((id, v)::tl) e = evalSLet fenv tl (subst e id v)
 
 (* Sample functions for testing *)
 
@@ -249,3 +262,20 @@ val mapf = ("mapf",
 					  ECall ("mapf",
 						 EPair (EIdent "f",
 							ETail (EIdent "xs")))))))))
+
+(*- eval [] (EFirst (EPair (EVal (VInt 1),
+                          EVal (VInt 2))));
+val it = VInt 1 : value
+- eval [] (ESecond (EPair (EVal (VInt 1),
+                           EVal (VInt 2))));
+val it = VInt 2 : value
+- eval [] (EFirst (ELet ("x", EVal (VInt 1),
+                         EPair (EIdent "x", EVal (VInt 2)))));
+val it = VInt 1 : value
+- exp;
+val it = ("exp",FDef ("args",ELet (#,#,#))) : string * function
+- pred;
+val it = ("pred",FDef ("n",ESub (#,#))) : string * function
+- eval [exp, pred] (ECall ("exp", EPair (EVal (VInt 4),
+EVal (VInt 9))));
+val it = VInt 262144 : value*)
