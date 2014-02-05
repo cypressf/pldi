@@ -121,9 +121,9 @@ fun subst (EVal v) id e = EVal v
   | subst (EIsEmpty e1) id e = unimplemented "subst/EIsEmpty"
   | subst (EHead e1) id e = unimplemented "subst/EHead"
   | subst (ETail e1) id e = unimplemented "subst/ETail"
-  | subst (EPair (e1,e2)) id e = unimplemented "subst/EPair"
-  | subst (EFirst e1) id e = unimplemented "subst/EFirst"
-  | subst (ESecond e1) id e = unimplemented "subst/ESecond"
+  | subst (EPair (e1,e2)) id e = EPair (subst e1 id e, subst e2 id e)
+  | subst (EFirst e1) id e = EFirst (subst e1 id e)
+  | subst (ESecond e1) id e = ESecond (subst e1 id e)
   | subst (ESlet (bnds,e1)) id e = unimplemented "subst/ESlet"
   | subst (ECallE (e1,e2)) id e = unimplemented "subst/ECallE"
 
@@ -158,9 +158,9 @@ fun eval _ (EVal v) = v
   | eval fenv (EIsEmpty e) = unimplemented "eval/EIsEmpty"
   | eval fenv (EHead e) = unimplemented "eval/EHead"
   | eval fenv (ETail e) = unimplemented "eval/ETail"
-  | eval fenv (EPair (e1,e2)) = unimplemented "eval/EPair"
-  | eval fenv (EFirst e) = unimplemented "eval/EFirst"
-  | eval fenv (ESecond e) = unimplemented "eval/ESecond"
+  | eval fenv (EPair (e1,e2)) = applyPair (eval fenv e1) (eval fenv e2)
+  | eval fenv (EFirst e) = applyFirst (eval fenv e)
+  | eval fenv (ESecond e) = applySecond (eval fenv e)
   | eval fenv (ECallE (func, e)) = unimplemented "eval/ECallE"
 
 and evalCall fenv (FDef (param,body)) arg = 
