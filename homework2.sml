@@ -78,7 +78,8 @@ fun applyPair v1 v2 = VPair (v1, v2)
 fun applyFirst (VPair (v1, v2)) = v1
   | applyFirst _ = evalError "You can only get first elements of VPairs"
 
-fun applySecond _ = unimplemented "applySecond"
+fun applySecond (VPair (v1, v2)) = v2
+  | applySecond _ = evalError "You can only get second elements of VPairs"
 
 
 
