@@ -95,7 +95,7 @@ fun applyHead (VList (hd::tl)) = hd
   | applyHead (VList []) = evalError "You can't get the head of an empty list."
   | applyHead _ = evalError "You can only get the head of a list"
 
-fun applyTail (VList (hd::tl)) = tl
+fun applyTail (VList (hd::tl)) = VList tl
   | applyTail (VList []) = evalError "You can't get the tail of an empty list."
   | applyTail _ = evalError "You can only get the tail of a list"
 
@@ -123,11 +123,11 @@ fun subst (EVal v) id e = EVal v
                                 then e
                               else EIdent id'
   | subst (ECall (n,e1)) id e = ECall (n,subst e1 id e)
-  | subst (ECons (e1,e2)) id e = unimplemented "subst/ECons"
-  | subst (EIsEmpty e1) id e = unimplemented "subst/EIsEmpty"
-  | subst (EHead e1) id e = unimplemented "subst/EHead"
-  | subst (ETail e1) id e = unimplemented "subst/ETail"
-  | subst (EPair (e1,e2)) id e = EPair (subst e1 id e, subst e2 id e)
+  | subst (ECons (e1,e2)) id e = ECons ((subst e1 id e), (subst e2 id e))
+  | subst (EIsEmpty e1) id e = EIsEmpty (subst e1 id e)
+  | subst (EHead e1) id e = EHead (subst e1 id e)
+  | subst (ETail e1) id e = ETail (subst e1 id e)
+  | subst (EPair (e1,e2)) id e = EPair ((subst e1 id e), (subst e2 id e))
   | subst (EFirst e1) id e = EFirst (subst e1 id e)
   | subst (ESecond e1) id e = ESecond (subst e1 id e)
   | subst (ESlet (bnds,e1)) id e =
@@ -166,10 +166,10 @@ fun eval _ (EVal v) = v
   | eval fenv (ECall (name,e)) = 
                 evalCall fenv (lookup name fenv) (eval fenv e)
   | eval fenv (ESlet (bnds,e)) = evalSLet fenv (evalBindings fenv bnds) e
-  | eval fenv (ECons (e1,e2)) = unimplemented "eval/ECons"
-  | eval fenv (EIsEmpty e) = unimplemented "eval/EIsEmpty"
-  | eval fenv (EHead e) = unimplemented "eval/EHead"
-  | eval fenv (ETail e) = unimplemented "eval/ETail"
+  | eval fenv (ECons (e1,e2)) = applyCons (eval fenv e1) (eval fenv e2)
+  | eval fenv (EIsEmpty e) = applyIsEmpty (eval fenv e)
+  | eval fenv (EHead e) = applyHead (eval fenv e)
+  | eval fenv (ETail e) = applyTail (eval fenv e)
   | eval fenv (EPair (e1,e2)) = applyPair (eval fenv e1) (eval fenv e2)
   | eval fenv (EFirst e) = applyFirst (eval fenv e)
   | eval fenv (ESecond e) = applySecond (eval fenv e)
@@ -276,7 +276,7 @@ val mapf = ("mapf",
 - pred
 - eval [exp, pred] (ECall ("exp", EPair (EVal (VInt 4),
 EVal (VInt 9))));
-val it = VInt 262144 : value*)
+*)
 
 (*applyCons (VInt 1) (VList [VInt 2, VInt 3, VInt 4]);
 applyCons (VBool true) (VList [VInt 1, VBool false, VInt 2]);
@@ -298,3 +298,26 @@ applyHead (VList [VBool true, VBool false]);
 applyHead (VList []);
 applyHead (VInt 1);
 *)
+(*
+applyTail (VList [VInt 1, VInt 2, VInt 3]);
+ applyTail (VList [VInt 1]);
+ applyTail (VList [VBool true, VBool false]);
+ applyTail (VList []);
+ applyTail (VInt 1);
+ *)
+
+(*eval [] (ECons (EVal (VInt 1), EVal (VList [])));
+eval [] (ECons (EVal (VInt 1), EVal (VList [VInt 2])));￼￼￼￼￼￼
+eval [] (EHead (ECons (EVal (VInt 1), EVal (VList [VInt 2]))));
+eval [] (ETail (ECons (EVal (VInt 1), EVal (VList [VInt 2]))));
+eval [] (EIsEmpty (ECons (EVal (VInt 1), EVal (VList [VInt 2]))));
+eval [] (EIsEmpty (ETail (ECons (EVal (VInt 1), EVal (VList [])))));
+eval [] (ELet ("x", EVal (VInt 1),
+                  ELet ("ys", EVal (VList [VInt 2, VInt 3]),
+                        ECons (EIdent "x", EIdent "ys"))));
+length;
+eval [length] (ECall ("length",
+                         EVal (VList [VInt 10, VInt 20, VInt 30])));
+append;
+eval [append] (ECall ("append",
+                         EVal (VPair (VList [VInt 1, VInt 2, VInt 3], VList [VBool true, VBool false]))));*)
