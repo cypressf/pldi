@@ -134,7 +134,7 @@ fun subst (EVal v) id e = EVal v
     if (isInBnds id bnds) then ESlet ((substBnds bnds id e), e1)
     else ESlet ((substBnds bnds id e), (subst e1 id e))
 
-  | subst (ECallE (e1,e2)) id e = unimplemented "subst/ECallE"
+  | subst (ECallE (e1,e2)) id e = ECallE ((subst e1 id e), (subst e2 id e))
 
 and substBnds [] id e = []
   | substBnds ((id', e')::tl) id e =
@@ -162,7 +162,7 @@ fun eval _ (EVal v) = v
   | eval fenv (EEq (e1,e2)) = applyEq (eval fenv e1) (eval fenv e2)
   | eval fenv (EIf (e1,e2,e3)) = evalIf fenv (eval fenv e1) e2 e3
   | eval fenv (ELet (n,e1,e2)) = evalLet fenv n (eval fenv e1) e2
-  | eval fenv (EIdent id) = unimplemented "eval/EIdent"
+  | eval fenv (EIdent id) = VFun (lookup id fenv)
   | eval fenv (ECall (name,e)) = 
                 evalCall fenv (lookup name fenv) (eval fenv e)
   | eval fenv (ESlet (bnds,e)) = evalSLet fenv (evalBindings fenv bnds) e
@@ -173,7 +173,10 @@ fun eval _ (EVal v) = v
   | eval fenv (EPair (e1,e2)) = applyPair (eval fenv e1) (eval fenv e2)
   | eval fenv (EFirst e) = applyFirst (eval fenv e)
   | eval fenv (ESecond e) = applySecond (eval fenv e)
-  | eval fenv (ECallE (func, e)) = unimplemented "eval/ECallE"
+  | eval fenv (ECallE (func, e)) =
+    let val VFun f = (eval fenv func) in
+      evalCall fenv f (eval fenv e)
+    end
 
 and evalCall fenv (FDef (param,body)) arg = 
       eval fenv (subst body param (EVal arg))
@@ -265,59 +268,3 @@ val mapf = ("mapf",
 					  ECall ("mapf",
 						 EPair (EIdent "f",
 							ETail (EIdent "xs")))))))))
-
-(*- eval [] (EFirst (EPair (EVal (VInt 1),
-                          EVal (VInt 2))))
-- eval [] (ESecond (EPair (EVal (VInt 1),
-                           EVal (VInt 2))))
-- eval [] (EFirst (ELet ("x", EVal (VInt 1),
-                         EPair (EIdent "x", EVal (VInt 2)))))
-- exp
-- pred
-- eval [exp, pred] (ECall ("exp", EPair (EVal (VInt 4),
-EVal (VInt 9))));
-*)
-
-(*applyCons (VInt 1) (VList [VInt 2, VInt 3, VInt 4]);
-applyCons (VBool true) (VList [VInt 1, VBool false, VInt 2]);
-applyCons (VList []) (VList []);
-applyCons (VList [VInt 1, VInt 2]) (VList [VInt 3, VInt 4]);
-applyCons (VInt 1) (VInt 2);*)
-
-(*
-applyIsEmpty (VList []);
-applyIsEmpty (VList [VInt 1]);
-applyIsEmpty (VList [VInt 1, VInt 2]);
-applyIsEmpty (VInt 1);
-applyIsEmpty (VBool true);
-*)
-
-(*
-applyHead (VList [VInt 1, VInt 2, VInt 3]);
-applyHead (VList [VBool true, VBool false]);
-applyHead (VList []);
-applyHead (VInt 1);
-*)
-(*
-applyTail (VList [VInt 1, VInt 2, VInt 3]);
- applyTail (VList [VInt 1]);
- applyTail (VList [VBool true, VBool false]);
- applyTail (VList []);
- applyTail (VInt 1);
- *)
-
-(*eval [] (ECons (EVal (VInt 1), EVal (VList [])));
-eval [] (ECons (EVal (VInt 1), EVal (VList [VInt 2])));￼￼￼￼￼￼
-eval [] (EHead (ECons (EVal (VInt 1), EVal (VList [VInt 2]))));
-eval [] (ETail (ECons (EVal (VInt 1), EVal (VList [VInt 2]))));
-eval [] (EIsEmpty (ECons (EVal (VInt 1), EVal (VList [VInt 2]))));
-eval [] (EIsEmpty (ETail (ECons (EVal (VInt 1), EVal (VList [])))));
-eval [] (ELet ("x", EVal (VInt 1),
-                  ELet ("ys", EVal (VList [VInt 2, VInt 3]),
-                        ECons (EIdent "x", EIdent "ys"))));
-length;
-eval [length] (ECall ("length",
-                         EVal (VList [VInt 10, VInt 20, VInt 30])));
-append;
-eval [append] (ECall ("append",
-                         EVal (VPair (VList [VInt 1, VInt 2, VInt 3], VList [VBool true, VBool false]))));*)
