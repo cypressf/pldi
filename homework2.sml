@@ -85,7 +85,8 @@ fun applySecond (VPair (v1, v2)) = v2
 
 (* COMPLETE THE FOLLOWING FOR QUESTION 3 *)
 
-fun applyCons _ _ = unimplemented "applyCons"
+fun applyCons v (VList l) = VList (v::l)
+  | applyCons v _ = evalError "You can only append something to a list."
 
 fun applyIsEmpty _ = unimplemented "applyIsEmpty"
 
