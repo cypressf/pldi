@@ -88,7 +88,8 @@ fun applySecond (VPair (v1, v2)) = v2
 fun applyCons v (VList l) = VList (v::l)
   | applyCons v _ = evalError "You can only append something to a list."
 
-fun applyIsEmpty _ = unimplemented "applyIsEmpty"
+fun applyIsEmpty (VList []) = VBool true
+  | applyIsEmpty _ = VBool false
 
 fun applyHead _ = unimplemented "applyHead"
 
@@ -265,18 +266,27 @@ val mapf = ("mapf",
 							ETail (EIdent "xs")))))))))
 
 (*- eval [] (EFirst (EPair (EVal (VInt 1),
-                          EVal (VInt 2))));
-val it = VInt 1 : value
+                          EVal (VInt 2))))
 - eval [] (ESecond (EPair (EVal (VInt 1),
-                           EVal (VInt 2))));
-val it = VInt 2 : value
+                           EVal (VInt 2))))
 - eval [] (EFirst (ELet ("x", EVal (VInt 1),
-                         EPair (EIdent "x", EVal (VInt 2)))));
-val it = VInt 1 : value
-- exp;
-val it = ("exp",FDef ("args",ELet (#,#,#))) : string * function
-- pred;
-val it = ("pred",FDef ("n",ESub (#,#))) : string * function
+                         EPair (EIdent "x", EVal (VInt 2)))))
+- exp
+- pred
 - eval [exp, pred] (ECall ("exp", EPair (EVal (VInt 4),
 EVal (VInt 9))));
 val it = VInt 262144 : value*)
+
+(*applyCons (VInt 1) (VList [VInt 2, VInt 3, VInt 4]);
+applyCons (VBool true) (VList [VInt 1, VBool false, VInt 2]);
+applyCons (VList []) (VList []);
+applyCons (VList [VInt 1, VInt 2]) (VList [VInt 3, VInt 4]);
+applyCons (VInt 1) (VInt 2);*)
+
+(*
+applyIsEmpty (VList []);
+applyIsEmpty (VList [VInt 1]);
+applyIsEmpty (VList [VInt 1, VInt 2]);
+applyIsEmpty (VInt 1);
+applyIsEmpty (VBool true);
+*)
