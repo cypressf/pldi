@@ -95,10 +95,9 @@ fun applyHead (VList (hd::tl)) = hd
   | applyHead (VList []) = evalError "You can't get the head of an empty list."
   | applyHead _ = evalError "You can only get the head of a list"
 
-fun applyTail _ = unimplemented "applyTail"
-
-
-
+fun applyTail (VList (hd::tl)) = tl
+  | applyTail (VList []) = evalError "You can't get the tail of an empty list."
+  | applyTail _ = evalError "You can only get the tail of a list"
 
 
 
