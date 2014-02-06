@@ -91,7 +91,9 @@ fun applyCons v (VList l) = VList (v::l)
 fun applyIsEmpty (VList []) = VBool true
   | applyIsEmpty _ = VBool false
 
-fun applyHead _ = unimplemented "applyHead"
+fun applyHead (VList (hd::tl)) = hd
+  | applyHead (VList []) = evalError "You can't get the head of an empty list."
+  | applyHead _ = evalError "You can only get the head of a list"
 
 fun applyTail _ = unimplemented "applyTail"
 
@@ -289,4 +291,11 @@ applyIsEmpty (VList [VInt 1]);
 applyIsEmpty (VList [VInt 1, VInt 2]);
 applyIsEmpty (VInt 1);
 applyIsEmpty (VBool true);
+*)
+
+(*
+applyHead (VList [VInt 1, VInt 2, VInt 3]);
+applyHead (VList [VBool true, VBool false]);
+applyHead (VList []);
+applyHead (VInt 1);
 *)
