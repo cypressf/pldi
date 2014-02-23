@@ -298,7 +298,7 @@ fun subst (EVal v) id e = EVal v
     in
 	EMatrix (mapMat sub m)
     end
-  | subst (EEye f) id e = unimplemented "subst/EEye"
+  | subst (EEye f) id e = EEye (subst f id e)
 
 
 
@@ -324,7 +324,7 @@ fun eval _ (EVal v) = v
   | eval fenv (ECall (name,es)) = 
                 evalCall fenv (lookup name fenv) (map (eval fenv) es)
   | eval fenv (EMatrix m) = matrix (mapMat (eval fenv) m)
-  | eval fenv (EEye (e)) = unimplemented "eval/EEye"
+  | eval fenv (EEye (e)) = applyEye (eval fenv e)
 
 and evalCall fenv (FDef (params,body)) vs = let
     fun substParams e [] [] = e
@@ -428,6 +428,7 @@ fun produceSymbol "let" = SOME (T_LET)
   | produceSymbol "true" = SOME (T_TRUE)
   | produceSymbol "false" = SOME (T_FALSE)
   | produceSymbol "if" = SOME (T_IF)
+  | produceSymbol "eye" = SOME (T_EYE)
   | produceSymbol text = SOME (T_SYM text)
 
 fun produceInt text = SOME (T_INT (valOf (Int.fromString text)))
