@@ -516,6 +516,7 @@ fun lexString str = lex (explode str)
  *   factor ::= T_INT                                [term_INT]
  *              T_TRUE                               [term_TRUE]
  *              T_FALSE                              [term_FALSE]
+ *              T_EYE T_LPAREN expr T_RPAREN
  *              T_SYM T_LPAREN expr_list T_RPAREN    [term_CALL]
  *              T_SYM                                [term_SYM]
  *              T_LPAREN expr TRPAREN                [term_PARENS]
@@ -576,6 +577,8 @@ fun expect_SLASH (T_SLASH::ts) = SOME ts
 fun expect_COMMA (T_COMMA::ts) = SOME ts
   | expect_COMMA _ = NONE
 
+fun expect_EYE (T_EYE::ts) = SOME ts
+  | expect_EYE _ = NONE
 
 
 fun parse_expr ts = 
@@ -748,7 +751,10 @@ and parse_factor ts =
 		   (case parse_factor_CALL ts
 		     of NONE => 
 			(case parse_factor_SYM ts
-			  of NONE => parse_factor_PARENS ts
+			  of NONE =>
+                              (case parse_factor_PARENS ts
+                                of NONE => parse_factor_EYE ts
+                               | s => s)
 			   | s => s)
 		      | s => s)
 		 | s => s)
@@ -799,6 +805,14 @@ and parse_factor_PARENS ts =
 	      (case expect_RPAREN ts
 		of NONE => NONE
 		| SOME ts => SOME (e,ts))))
+
+and parse_factor_EYE ts =
+    (case expect_EYE ts
+       of NONE => NONE
+       | SOME ts =>
+        (case parse_factor_PARENS ts
+           of NONE => NONE
+           | SOME (e, ts) => SOME ((EEye e), ts)))
 
 
 fun parse tokens = 
