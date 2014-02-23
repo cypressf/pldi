@@ -2,9 +2,10 @@
 (*
  * Code for HOMEWORK 2
  *
+ * Cypress
+ * iamcypress@gmail.com
+ * I discussed things with Brendan Ritter when working on questions 1 and 2
  *)
-
-Control.Print.printDepth := 100;
 
 (* Internal representation *)
 
