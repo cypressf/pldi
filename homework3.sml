@@ -441,6 +441,9 @@ fun produceLParen _ = SOME (T_LPAREN)
 fun produceRParen _ = SOME (T_RPAREN)
 fun produceSlash _ = SOME (T_SLASH)
 fun produceComma _ = SOME (T_COMMA)
+fun produceLBracket _ = SOME (T_LBRACKET)
+fun produceRBracket _ = SOME (T_RBRACKET)
+fun produceSemicolon _ = SOME (T_SEMICOLON)
 
 val tokens = let 
     fun convert (re,f) = (R.compileString re, f)
@@ -455,7 +458,10 @@ in
 		 ("\\(",                  produceLParen),
 		 ("\\)",                  produceRParen),
 		 (",",                    produceComma),
-		 ("/",                    produceSlash)]
+		 ("/",                    produceSlash),
+                 ("\\[",                  produceLBracket),
+                 ("\\]",                  produceRBracket),
+                 (";",                    produceSemicolon)]
 end
 
 
