@@ -36,20 +36,20 @@ fun unimplemented fname = raise Fail ("Function "^fname^" not implemented")
 
 datatype value = VRat of int * int
                | VBool of bool
-	       | VMat of value list list
+               | VMat of value list list
 
 datatype expr = EVal of value
               | EAdd of expr * expr
-	      | ESub of expr * expr
+              | ESub of expr * expr
               | EMul of expr * expr
               | EDiv of expr * expr
-	      | EEq of expr * expr
+              | EEq of expr * expr
               | EIf of expr * expr * expr
               | ELet of string * expr * expr
               | EIdent of string
               | ECall of string * expr list
-	      | EMatrix of expr list list
-	      | EEye of expr
+              | EMatrix of expr list list
+              | EEye of expr
 
 datatype function = FDef of string list * expr 
 
@@ -65,9 +65,9 @@ fun stringOfValue (VRat (i,1)) = Int.toString i
   | stringOfValue (VBool true) = "true"
   | stringOfValue (VBool false) = "false"
   | stringOfValue (VMat m) = let
-	fun row r = String.concatWith " " (map stringOfValue r)
+        fun row r = String.concatWith " " (map stringOfValue r)
     in
-	"["^(String.concatWith " ; " (map row m))^"]"
+        "["^(String.concatWith " ; " (map row m))^"]"
     end
 
 fun printValue v = print ((stringOfValue v)^"\n")
@@ -77,10 +77,10 @@ fun stringOfExpr e = let
     fun $+ ss = String.concatWith "," ss
     fun strCon n f xs = $ [n," (", $+ (map f xs), ")"]
     fun strM f mat = let
-	    fun row r = $ ["[", $+ (map f r), "]"]
-	in
-	    $ ["[", $+ (map row mat), "]"]
-	end
+            fun row r = $ ["[", $+ (map f r), "]"]
+        in
+            $ ["[", $+ (map row mat), "]"]
+        end
     fun strV (VRat (i,j)) = $ ["VRat (",Int.toString i,",",Int.toString j,")"]
       | strV (VBool true) = "VBool true"
       | strV (VBool false) = "VBool false"
@@ -140,22 +140,22 @@ fun mulRat (n1,d1) (n2,d2) = simplifyRat (n1 * n2, d1 * d2)
 
 fun height [] = evalError "matrix with no rows"
   | height m = length m
-	       
+               
 fun width [] = evalError "matrix with no rows"
   | width (xs::xss) = length xs
 
 fun matrix [] = evalError "matrix with no rows"
   | matrix (xs::xss) = let
-	val columns = length xs
-	fun check_lengths [] = []
-	  | check_lengths (xs::xss) = 
-	    if length xs = columns
-	       then xs::(check_lengths xss)
-	    else evalError "matrix with uneven rows"
+        val columns = length xs
+        fun check_lengths [] = []
+          | check_lengths (xs::xss) = 
+            if length xs = columns
+               then xs::(check_lengths xss)
+            else evalError "matrix with uneven rows"
     in
-	if columns > 0 
-  	  then VMat (xs::(check_lengths xss))
-	else evalError "matrix with no columns"
+        if columns > 0 
+            then VMat (xs::(check_lengths xss))
+        else evalError "matrix with no columns"
     end
 
 
@@ -169,12 +169,12 @@ fun identityMat n =
     else if n = 1
       then [[VRat (1,1)]]
     else let 
-	    fun cons0 xs = (VRat (0,1))::xs
-	    fun zero _ = VRat (0,1)
-	in
-	    (VRat (1,1)::(List.tabulate (n-1,zero)))
-		::(map cons0 (identityMat (n-1)))
-	end
+            fun cons0 xs = (VRat (0,1))::xs
+            fun zero _ = VRat (0,1)
+        in
+            (VRat (1,1)::(List.tabulate (n-1,zero)))
+                ::(map cons0 (identityMat (n-1)))
+        end
 
 
 
@@ -187,9 +187,9 @@ fun applyAdd (VRat r) (VRat s) = VRat (addRat r s)
   | applyAdd (VMat m) (VMat n) = VMat (addMat m n)
   | applyAdd v (VMat m) = VMat (mapMat (applyAdd v) m)
   | applyAdd (VMat m) v = let
-	fun addRight v w = applyAdd w v 
+        fun addRight v w = applyAdd w v 
     in
-	VMat (mapMat (addRight v) m)
+        VMat (mapMat (addRight v) m)
     end
   | applyAdd _ _ = evalError "applyAdd"
 
@@ -211,9 +211,9 @@ fun applyMul (VRat r) (VRat s) = VRat (mulRat r s)
   | applyMul (VMat m) (VMat n) = VMat (mulMat m n)
   | applyMul v (VMat m) = VMat (mapMat (applyMul v) m)
   | applyMul (VMat m) v = let
-	fun mulRight v w = applyMul w v 
+        fun mulRight v w = applyMul w v 
     in
-	VMat (mapMat (mulRight v) m)
+        VMat (mapMat (mulRight v) m)
     end
   | applyMul _ _ = evalError "applyMul"
 
@@ -289,14 +289,14 @@ fun subst (EVal v) id e = EVal v
                                 then e
                               else EIdent id'
   | subst (ECall (n,fs)) id e = let
-	fun sub f = subst f id e 
+        fun sub f = subst f id e 
     in 
-	ECall (n, map sub fs)
+        ECall (n, map sub fs)
     end
   | subst (EMatrix m) id e = let
-	fun sub f = subst f id e
+        fun sub f = subst f id e
     in
-	EMatrix (mapMat sub m)
+        EMatrix (mapMat sub m)
     end
   | subst (EEye f) id e = EEye (subst f id e)
 
@@ -364,10 +364,10 @@ fun matchRE' re cs = let
     val prefix = R.prefix re List.getItem
     fun getMatch NONE = NONE
       | getMatch (SOME (mt, cs')) = let
-	    val {pos,len} = MatchTree.root mt
-	in
-	    SOME (implode (List.take (pos,len)), cs')
-	end
+            val {pos,len} = MatchTree.root mt
+        in
+            SOME (implode (List.take (pos,len)), cs')
+        end
 in
     getMatch (prefix cs)
 end
@@ -382,20 +382,20 @@ fun matchRE re cs = matchRE' (R.compileString re) cs
  *)
 
 datatype token = T_LET 
-	       | T_SYM of string 
-	       | T_INT of int 
-	       | T_TRUE 
-	       | T_FALSE
-	       | T_PLUS
-	       | T_TIMES
-	       | T_MINUS
-	       | T_SLASH
-	       | T_EQUAL
-	       | T_IF 
-	       | T_LPAREN 
-	       | T_RPAREN
-	       | T_COMMA
-	       | T_EYE
+               | T_SYM of string 
+               | T_INT of int 
+               | T_TRUE 
+               | T_FALSE
+               | T_PLUS
+               | T_TIMES
+               | T_MINUS
+               | T_SLASH
+               | T_EQUAL
+               | T_IF 
+               | T_LPAREN 
+               | T_RPAREN
+               | T_COMMA
+               | T_EYE
                | T_SEMICOLON
                | T_LBRACKET
                | T_RBRACKET
@@ -449,16 +449,16 @@ val tokens = let
     fun convert (re,f) = (R.compileString re, f)
 in
     map convert [("( |\\n|\\t)+",         whitespace),
-		 ("\\+" ,                 producePlus),
-		 ("\\*",                  produceTimes),
-		 ("-",                    produceMinus),
-		 ("=",                    produceEqual),
-		 ("[a-zA-Z][a-zA-Z0-9]*", produceSymbol),
-		 ("~?[0-9]+",             produceInt),
-		 ("\\(",                  produceLParen),
-		 ("\\)",                  produceRParen),
-		 (",",                    produceComma),
-		 ("/",                    produceSlash),
+                 ("\\+" ,                 producePlus),
+                 ("\\*",                  produceTimes),
+                 ("-",                    produceMinus),
+                 ("=",                    produceEqual),
+                 ("[a-zA-Z][a-zA-Z0-9]*", produceSymbol),
+                 ("~?[0-9]+",             produceInt),
+                 ("\\(",                  produceLParen),
+                 ("\\)",                  produceRParen),
+                 (",",                    produceComma),
+                 ("/",                    produceSlash),
                  ("\\[",                  produceLBracket),
                  ("\\]",                  produceRBracket),
                  (";",                    produceSemicolon)]
@@ -473,8 +473,8 @@ end
 fun getToken cs = let
     fun loop [] = parseError ("cannot tokenize "^(implode cs))
       | loop ((re,f)::xs) = (case matchRE' re cs of
-				 NONE => loop xs
-			       | SOME (m,cs') => (f m,cs'))
+                                 NONE => loop xs
+                               | SOME (m,cs') => (f m,cs'))
 in
     loop tokens
 end
@@ -482,11 +482,11 @@ end
 
 fun lex []  = []
   | lex cs = let
-	val (token,cs') = getToken cs
+        val (token,cs') = getToken cs
     in
         case token of 
           NONE => lex cs'
-	| SOME t => t::(lex cs')
+        | SOME t => t::(lex cs')
     end
 
 
@@ -510,6 +510,12 @@ fun lexString str = lex (explode str)
  *            
  *   expr_list :: = expr T_COMMA expr_list           [expr_list_COMMA]
  *                  expr                             [expr_list_EXPR]
+ * 
+ *   expr_rows ::= expr_row T_SEMICOLON expr_rows    [expr_rows_MULTIPLE]
+ *                 expr_row                          [expr_rows_SINGLE]
+ *
+ *   expr_row ::= expr expr_row                      [expr_row_MULTIPLE]
+ *                expr                               [expr_row_SINGLE]
  *                  
  *   eterm ::= term T_PLUS eterm                     [eterm_PLUS]
  *             term T_MINUS eterm                    [eterm_MINUS]
@@ -526,6 +532,7 @@ fun lexString str = lex (explode str)
  *              T_SYM T_LPAREN expr_list T_RPAREN    [term_CALL]
  *              T_SYM                                [term_SYM]
  *              T_LPAREN expr TRPAREN                [term_PARENS]
+ *              T_LBRACKET expr_rows T_RBRACKET
  * 
  *  (The names on the right are used to refer to the rules
  *   when naming helper parsing functions; they're just indicative)
@@ -586,73 +593,125 @@ fun expect_COMMA (T_COMMA::ts) = SOME ts
 fun expect_EYE (T_EYE::ts) = SOME ts
   | expect_EYE _ = NONE
 
+fun expect_LBRACKET (T_LBRACKET::ts) = SOME ts
+        | expect_LBRACKET _ = NONE
+
+fun expect_RBRACKET (T_RBRACKET::ts) = SOME ts
+        | expect_RBRACKET _ = NONE
+
+fun expect_SEMICOLON (T_SEMICOLON::ts) = SOME ts
+    | expect_SEMICOLON _ = NONE
 
 fun parse_expr ts = 
     (case parse_expr_IF ts
       of NONE => 
-	 (case parse_expr_LET ts
-	   of NONE => 
-	      (case parse_expr_EQ ts
-		of NONE => parse_expr_ETERM ts
-		 | s => s)
-	    | s => s)
+         (case parse_expr_LET ts
+           of NONE => 
+              (case parse_expr_EQ ts
+                of NONE => parse_expr_ETERM ts
+                 | s => s)
+            | s => s)
        | s => s)
 
-					       
+                                               
 and parse_expr_IF ts = 
     (case expect_IF ts
       of NONE => NONE
        | SOME ts => 
-	 (case parse_expr ts
-	   of NONE => NONE
-	    | SOME (e1,ts) => 
-	      (case expect_THEN ts
-		of NONE => NONE
-		 | SOME ts => 
-		   (case parse_expr ts
-		     of NONE => NONE
-		      | SOME (e2,ts) => 
-			(case expect_ELSE ts
-			  of NONE => NONE
-			   | SOME ts => 
-			     (case parse_expr ts
-			       of NONE => NONE
-				| SOME (e3,ts) => SOME (EIf (e1,e2,e3),ts)))))))
+         (case parse_expr ts
+           of NONE => NONE
+            | SOME (e1,ts) => 
+              (case expect_THEN ts
+                of NONE => NONE
+                 | SOME ts => 
+                   (case parse_expr ts
+                     of NONE => NONE
+                      | SOME (e2,ts) => 
+                        (case expect_ELSE ts
+                          of NONE => NONE
+                           | SOME ts => 
+                             (case parse_expr ts
+                               of NONE => NONE
+                                | SOME (e3,ts) => SOME (EIf (e1,e2,e3),ts)))))))
 
 and parse_expr_LET ts = 
     (case expect_LET ts 
       of NONE => NONE
        | SOME ts => 
-	 (case expect_SYM ts 
-	   of NONE => NONE
-	    | SOME (s,ts) => 
-	      (case expect_EQUAL ts
-		of NONE => NONE
-		 | SOME ts => 
-		   (case parse_expr ts
-		     of NONE => NONE
-		      | SOME (e1,ts) => 
-			(case expect_IN ts
-			  of NONE => NONE
-			   | SOME ts => 
-			     (case parse_expr ts
-			       of NONE => NONE
-				| SOME (e2,ts) => SOME (ELet (s,e1,e2),ts)))))))
+         (case expect_SYM ts 
+           of NONE => NONE
+            | SOME (s,ts) => 
+              (case expect_EQUAL ts
+                of NONE => NONE
+                 | SOME ts => 
+                   (case parse_expr ts
+                     of NONE => NONE
+                      | SOME (e1,ts) => 
+                        (case expect_IN ts
+                          of NONE => NONE
+                           | SOME ts => 
+                             (case parse_expr ts
+                               of NONE => NONE
+                                | SOME (e2,ts) => SOME (ELet (s,e1,e2),ts)))))))
 
 
 and parse_expr_EQ ts = 
     (case parse_eterm ts
       of NONE => NONE
        | SOME (e1,ts) => 
-	 (case expect_EQUAL ts
-	   of NONE => NONE
-	    | SOME ts => 
-	      (case parse_eterm ts
-		of NONE => NONE
-		 | SOME (e2,ts) => SOME (EEq (e1,e2),ts))))
+         (case expect_EQUAL ts
+           of NONE => NONE
+            | SOME ts => 
+              (case parse_eterm ts
+                of NONE => NONE
+                 | SOME (e2,ts) => SOME (EEq (e1,e2),ts))))
 
 and parse_expr_ETERM ts = parse_eterm ts
 
+and parse_expr_rows ts = 
+    (case parse_expr_rows_MULTIPLE ts
+        of NONE => 
+        (case parse_expr_rows_SINGLE ts
+            of NONE => NONE
+            | s => s)
+        | s => s)
+
+and parse_expr_rows_MULTIPLE ts = 
+    (case parse_expr_row ts
+        of NONE => NONE
+        | SOME (row, ts) => 
+        (case expect_SEMICOLON ts
+            of NONE => NONE
+            | SOME ts =>
+            (case parse_expr_rows ts
+                of NONE => NONE
+                | SOME (rows, ts) => SOME (row::rows, ts))))
+
+and parse_expr_rows_SINGLE ts =
+    (case parse_expr_row ts
+        of NONE => NONE
+        | SOME (row, ts) => SOME ([row], ts))
+
+and parse_expr_row ts = 
+    (case parse_expr_row_MULTIPLE ts
+        of NONE =>
+        (case parse_expr_row_SINGLE ts
+            of NONE => NONE
+            | s => s)
+        | s => s)
+
+and parse_expr_row_MULTIPLE ts =
+    (case parse_expr ts
+        of NONE => NONE
+        | SOME (e, ts) =>
+        (case parse_expr_row ts
+            of NONE => NONE
+            | SOME (row, ts) => SOME (e::row, ts)))
+
+and parse_expr_row_SINGLE ts =
+    (case parse_expr ts
+        of NONE => NONE
+        | SOME (e, ts) => SOME ([e], ts))
 
 
 and parse_expr_list ts = 
@@ -664,12 +723,12 @@ and parse_expr_list_COMMA ts =
     (case parse_expr ts
       of NONE => NONE
        | SOME (e,ts) => 
-	 (case expect_COMMA ts
-	   of NONE => NONE
-	   | SOME ts => 
-	     (case parse_expr_list ts
-	       of NONE => NONE
-		| SOME (es,ts) => SOME (e::es,ts))))
+         (case expect_COMMA ts
+           of NONE => NONE
+           | SOME ts => 
+             (case parse_expr_list ts
+               of NONE => NONE
+                | SOME (es,ts) => SOME (e::es,ts))))
 
 and parse_expr_list_EXPR ts = 
     (case parse_expr ts
@@ -681,32 +740,32 @@ and parse_expr_list_EXPR ts =
 and parse_eterm ts = 
     (case parse_eterm_PLUS ts
       of NONE => 
-	 (case parse_eterm_MINUS ts
-	   of NONE => parse_eterm_TERM ts
-	    | s => s)
+         (case parse_eterm_MINUS ts
+           of NONE => parse_eterm_TERM ts
+            | s => s)
        | s => s)
 
 and parse_eterm_PLUS ts = 
     (case parse_term ts 
       of NONE => NONE
        | SOME (e1,ts) => 
-	 (case expect_PLUS ts
-	   of NONE => NONE
-	    | SOME ts => 
-	      (case parse_eterm ts
-		of NONE => NONE
-		| SOME (e2,ts) => SOME (EAdd (e1,e2),ts))))
+         (case expect_PLUS ts
+           of NONE => NONE
+            | SOME ts => 
+              (case parse_eterm ts
+                of NONE => NONE
+                | SOME (e2,ts) => SOME (EAdd (e1,e2),ts))))
 
 and parse_eterm_MINUS ts = 
     (case parse_term ts 
       of NONE => NONE
        | SOME (e1,ts) => 
-	 (case expect_MINUS ts
-	   of NONE => NONE
-	    | SOME ts => 
-	      (case parse_eterm ts
-		of NONE => NONE
-		| SOME (e2,ts) => SOME (ESub (e1,e2),ts))))
+         (case expect_MINUS ts
+           of NONE => NONE
+            | SOME ts => 
+              (case parse_eterm ts
+                of NONE => NONE
+                | SOME (e2,ts) => SOME (ESub (e1,e2),ts))))
 
 and parse_eterm_TERM ts = parse_term ts
 
@@ -715,32 +774,32 @@ and parse_eterm_TERM ts = parse_term ts
 and parse_term ts = 
     (case parse_term_TIMES ts
       of NONE => 
-	 (case parse_term_SLASH ts
-	   of NONE => parse_term_FACTOR ts
-	    | s => s)
+         (case parse_term_SLASH ts
+           of NONE => parse_term_FACTOR ts
+            | s => s)
       | s => s)
 
 and parse_term_TIMES ts = 
     (case parse_factor ts
       of NONE => NONE
        | SOME (e1,ts) => 
-	 (case expect_TIMES ts
-	   of NONE => NONE
-	    | SOME ts => 
-	      (case parse_term ts
-		of NONE => NONE
-		| SOME (e2,ts) => SOME (EMul (e1,e2),ts))))
+         (case expect_TIMES ts
+           of NONE => NONE
+            | SOME ts => 
+              (case parse_term ts
+                of NONE => NONE
+                | SOME (e2,ts) => SOME (EMul (e1,e2),ts))))
 
 and parse_term_SLASH ts = 
     (case parse_factor ts
       of NONE => NONE
        | SOME (e1,ts) => 
-	 (case expect_SLASH ts
-	   of NONE => NONE
-	    | SOME ts => 
-	      (case parse_term ts
-		of NONE => NONE
-		| SOME (e2,ts) => SOME (EDiv (e1,e2),ts))))
+         (case expect_SLASH ts
+           of NONE => NONE
+            | SOME ts => 
+              (case parse_term ts
+                of NONE => NONE
+                | SOME (e2,ts) => SOME (EDiv (e1,e2),ts))))
 
 and parse_term_FACTOR ts = parse_factor ts
 
@@ -750,21 +809,21 @@ and parse_term_FACTOR ts = parse_factor ts
 and parse_factor ts = 
     (case parse_factor_INT ts
       of NONE =>
-	 (case parse_factor_TRUE ts 
-	   of NONE => 
-	      (case parse_factor_FALSE ts 
-		of NONE => 
-		   (case parse_factor_CALL ts
-		     of NONE => 
-			(case parse_factor_SYM ts
-			  of NONE =>
+         (case parse_factor_TRUE ts 
+           of NONE => 
+              (case parse_factor_FALSE ts 
+                of NONE => 
+                   (case parse_factor_CALL ts
+                     of NONE => 
+                        (case parse_factor_SYM ts
+                          of NONE =>
                               (case parse_factor_PARENS ts
                                 of NONE => parse_factor_EYE ts
                                | s => s)
-			   | s => s)
-		      | s => s)
-		 | s => s)
-	    | s => s)
+                           | s => s)
+                      | s => s)
+                 | s => s)
+            | s => s)
        | s => s)
 
 and parse_factor_INT ts = 
@@ -786,15 +845,15 @@ and parse_factor_CALL ts =
     (case expect_SYM ts 
       of NONE => NONE
        | SOME (s, ts) => 
-	 (case expect_LPAREN ts
-	   of NONE => NONE
-	    | SOME ts => 
-	      (case parse_expr_list ts
-		of NONE => NONE
-		 | SOME (es,ts) => 
-		   (case expect_RPAREN ts
-		     of NONE => NONE
-		      | SOME ts => SOME (ECall (s,es),ts)))))
+         (case expect_LPAREN ts
+           of NONE => NONE
+            | SOME ts => 
+              (case parse_expr_list ts
+                of NONE => NONE
+                 | SOME (es,ts) => 
+                   (case expect_RPAREN ts
+                     of NONE => NONE
+                      | SOME ts => SOME (ECall (s,es),ts)))))
 
 and parse_factor_SYM ts = 
     (case expect_SYM ts
@@ -805,12 +864,12 @@ and parse_factor_PARENS ts =
     (case expect_LPAREN ts
       of NONE => NONE
        | SOME ts =>
-	 (case parse_expr ts
-	   of NONE => NONE
-	    | SOME (e,ts) => 
-	      (case expect_RPAREN ts
-		of NONE => NONE
-		| SOME ts => SOME (e,ts))))
+         (case parse_expr ts
+           of NONE => NONE
+            | SOME (e,ts) => 
+              (case expect_RPAREN ts
+                of NONE => NONE
+                | SOME ts => SOME (e,ts))))
 
 and parse_factor_EYE ts =
     (case expect_EYE ts
@@ -819,6 +878,20 @@ and parse_factor_EYE ts =
         (case parse_factor_PARENS ts
            of NONE => NONE
            | SOME (e, ts) => SOME ((EEye e), ts)))
+
+and parse_factor_MATRIX ts =
+    (case expect_LBRACKET ts of
+        NONE => NONE
+        | SOME ts =>
+        (case parse_expr_rows ts
+            of NONE =>
+            (case expect_RBRACKET ts of
+                NONE => NONE
+                | SOME ts => SOME (EMatrix [[EVal(VRat (1,1)), EVal(VRat(2,1)), EVal(VRat(3,1))]], ts) )
+            | SOME (rows, ts) =>
+            (case expect_RBRACKET ts of
+                NONE => NONE
+                | SOME ts => SOME (EMatrix rows, ts) )))
 
 
 fun parse tokens = 
@@ -847,22 +920,22 @@ fun shell fenv = let
     fun prompt () = (print "pldi-hw3> "; TextIO.inputLine (TextIO.stdIn))
     fun pr l = print ((String.concatWith " " l)^"\n")
     fun read fenv = 
-	(case prompt () 
-	  of NONE => ()
-	   | SOME ".\n" => ()
-	   | SOME str => eval_print fenv str)
+        (case prompt () 
+          of NONE => ()
+           | SOME ".\n" => ()
+           | SOME str => eval_print fenv str)
     and eval_print fenv str = 
-	(let val ts = lexString str
-	     val _ = pr (["Tokens ="] @ (map stringOfToken ts))
-	     val expr = parse ts
-	     val _ = pr ["Internal rep = ", stringOfExpr (expr)]
-	     val v = eval fenv expr
-	     val _ = pr [stringOfValue v]
-	 in
-	     read fenv
-	 end
-	 handle Parsing msg => (pr ["Parsing error:", msg]; read fenv)
-	      | Evaluation msg => (pr ["Evaluation error:", msg]; read fenv))
+        (let val ts = lexString str
+             val _ = pr (["Tokens ="] @ (map stringOfToken ts))
+             val expr = parse ts
+             val _ = pr ["Internal rep = ", stringOfExpr (expr)]
+             val v = eval fenv expr
+             val _ = pr [stringOfValue v]
+         in
+             read fenv
+         end
+         handle Parsing msg => (pr ["Parsing error:", msg]; read fenv)
+              | Evaluation msg => (pr ["Evaluation error:", msg]; read fenv))
 in
     print "Type . by itself to quit\n";
     read fenv
