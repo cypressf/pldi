@@ -884,10 +884,7 @@ and parse_factor_MATRIX ts =
         NONE => NONE
         | SOME ts =>
         (case parse_expr_rows ts
-            of NONE =>
-            (case expect_RBRACKET ts of
-                NONE => NONE
-                | SOME ts => SOME (EMatrix [[EVal(VRat (1,1)), EVal(VRat(2,1)), EVal(VRat(3,1))]], ts) )
+            of NONE => NONE
             | SOME (rows, ts) =>
             (case expect_RBRACKET ts of
                 NONE => NONE
