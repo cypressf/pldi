@@ -967,7 +967,10 @@ fun parse tokens =
 
 
 
-fun parse_wdef tokens = unimplemented "parse_wdef"
+fun parse_wdef tokens =
+    (case parse_decl tokens
+      of SOME (d,[]) => d
+       | _ => parseError "Cannot parse expression")
 
 
 
@@ -1005,5 +1008,38 @@ end
 
 
     
-fun shell_wdef fenv = unimplemented "shell_wdef"
-
+fun shell_wdef fenv = let
+    fun prompt () = (print "pldi-hw3> "; TextIO.inputLine (TextIO.stdIn))
+    fun pr l = print ((String.concatWith " " l)^"\n")
+    fun read fenv = 
+        (case prompt () 
+          of NONE => ()
+           | SOME ".\n" => ()
+           | SOME str => eval_print fenv str)
+    and eval_print fenv str = 
+       (let val ts = lexString str
+            val _ = pr (["Tokens ="] @ (map stringOfToken ts))
+            val parse_result = parse_wdef ts
+        in 
+            (case parse_result of
+                DeclDefinition (name, params, body) => 
+                    let val new_function = (name, (FDef (params, body)))
+                        val _ = pr ["Internal rep = ", stringOfExpr (body)]
+                    in
+                        read (new_function::fenv)
+                    end
+                | DeclExpression e =>
+                    let val expr = e
+                        val _ = pr ["Internal rep = ", stringOfExpr (expr)]
+                        val v = eval fenv expr
+                        val _ = pr [stringOfValue v]
+                    in
+                        read fenv
+                    end)
+        end
+        handle Parsing msg => (pr ["Parsing error:", msg]; read fenv)
+             | Evaluation msg => (pr ["Evaluation error:", msg]; read fenv))
+in
+    print "Type . by itself to quit\n";
+    read fenv
+end
