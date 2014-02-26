@@ -429,6 +429,7 @@ fun produceSymbol "let" = SOME (T_LET)
   | produceSymbol "false" = SOME (T_FALSE)
   | produceSymbol "if" = SOME (T_IF)
   | produceSymbol "eye" = SOME (T_EYE)
+  | produceSymbol "def" = SOME (T_DEF)
   | produceSymbol text = SOME (T_SYM text)
 
 fun produceInt text = SOME (T_INT (valOf (Int.fromString text)))
@@ -525,14 +526,21 @@ fun lexString str = lex (explode str)
  *            factor T_SLASH term                    [term_SLASH]
  *            factor                                 [term_FACTOR]
  *
- *   factor ::= T_INT                                [term_INT]
- *              T_TRUE                               [term_TRUE]
- *              T_FALSE                              [term_FALSE]
+ *   factor ::= T_INT                                [factor_INT]
+ *              T_TRUE                               [factor_TRUE]
+ *              T_FALSE                              [factor_FALSE]
  *              T_EYE T_LPAREN expr T_RPAREN
- *              T_SYM T_LPAREN expr_list T_RPAREN    [term_CALL]
- *              T_SYM                                [term_SYM]
- *              T_LPAREN expr TRPAREN                [term_PARENS]
- *              T_LBRACKET expr_rows T_RBRACKET
+ *              T_SYM T_LPAREN expr_list T_RPAREN    [factor_CALL]
+ *              T_SYM                                [factor_SYM]
+ *              T_LPAREN expr TRPAREN                [factor_PARENS]
+ *              T_LBRACKET expr_rows T_RBRACKET      [factor_MATRIX]
+ *
+ *   decl ::= T_DEF T_SYM T_LPAREN symbol_list T_RPAREN T_EQUAL expr [decl_DEF]
+ *            expr                                   [decl_EXPR]
+ *
+ *   symbol_list ::= T_SYM T_COMMA symbol_list       [symbol_list_COMMA]
+ *                   T_SYM                           [symbol_list_SYM]
+ *
  * 
  *  (The names on the right are used to refer to the rules
  *   when naming helper parsing functions; they're just indicative)
@@ -803,9 +811,6 @@ and parse_term_SLASH ts =
 
 and parse_term_FACTOR ts = parse_factor ts
 
-
-
-
 and parse_factor ts = 
     (case parse_factor_INT ts
       of NONE =>
@@ -818,7 +823,10 @@ and parse_factor ts =
                         (case parse_factor_SYM ts
                           of NONE =>
                               (case parse_factor_PARENS ts
-                                of NONE => parse_factor_EYE ts
+                                of NONE =>
+                                (case parse_factor_EYE ts
+                                    of NONE => parse_factor_MATRIX ts
+                                    | s => s)
                                | s => s)
                            | s => s)
                       | s => s)
