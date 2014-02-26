@@ -546,6 +546,8 @@ fun lexString str = lex (explode str)
  *   when naming helper parsing functions; they're just indicative)
  *)
 
+fun expect_DEF (T_DEF::ts) = SOME ts
+  | expect_DEF _ = NONE 
 
 fun expect_INT ((T_INT i)::ts) = SOME (i,ts)
   | expect_INT _ = NONE
@@ -898,9 +900,20 @@ and parse_factor_MATRIX ts =
                 NONE => NONE
                 | SOME ts => SOME (EMatrix rows, ts) )))
 
+and parse_decl ts = 
+    (case parse_expr ts of
+        NONE => NONE
+        | s => s)
+
+and parse_decl_DEF ts = unimplemented "parse_decl_DEF"
+and parse_decl_EXPR ts = unimplemented "parse_decl_EXPR"
+
+and parse_symbol_list ts = unimplemented "parse_symbol_list"
+and parse_symbol_list_COMMA ts = unimplemented "parse_symbol_list_COMMA"
+and parse_symbol_list_SYM ts = unimplemented "parse_symbol_list_SYM"
 
 fun parse tokens = 
-    (case parse_expr tokens
+    (case parse_decl tokens
       of SOME (e,[]) => e
        | _ => parseError "Cannot parse expression")
 
