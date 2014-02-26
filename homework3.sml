@@ -935,9 +935,29 @@ and parse_decl_DEF ts =
                                 | SOME (body, ts) => SOME ((DeclDefinition (name, params, body)), ts))))))))
 
 
-and parse_symbol_list ts = unimplemented "parse_symbol_list"
-and parse_symbol_list_COMMA ts = unimplemented "parse_symbol_list_COMMA"
-and parse_symbol_list_SYM ts = unimplemented "parse_symbol_list_SYM"
+and parse_symbol_list ts = 
+    (case parse_symbol_list_COMMA ts of
+        NONE => (case parse_symbol_list_SYM ts of
+            NONE => NONE
+            | s => s)
+        | s => s)
+
+
+and parse_symbol_list_COMMA ts = 
+    (case expect_SYM ts of
+        NONE => NONE
+        | SOME (s, ts) =>
+        (case expect_COMMA ts of
+            NONE => NONE
+            | SOME ts =>
+            (case parse_symbol_list ts of
+                NONE => NONE
+                | SOME (symbols, ts) => SOME (s::symbols, ts))))
+
+and parse_symbol_list_SYM ts = 
+    (case expect_SYM ts of
+        NONE => NONE
+        | SOME (s, ts) => SOME ([s], ts))
 
 fun parse tokens = 
     (case parse_expr tokens
