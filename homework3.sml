@@ -53,6 +53,9 @@ datatype expr = EVal of value
 
 datatype function = FDef of string list * expr 
 
+datatype decl = DeclDefinition of string * (string list) * expr
+              | DeclExpression of expr
+
 
 
 (*
@@ -536,7 +539,7 @@ fun lexString str = lex (explode str)
  *              T_LBRACKET expr_rows T_RBRACKET      [factor_MATRIX]
  *
  *   decl ::= T_DEF T_SYM T_LPAREN symbol_list T_RPAREN T_EQUAL expr [decl_DEF]
- *            expr                                   [decl_EXPR]
+ *            expr                                   
  *
  *   symbol_list ::= T_SYM T_COMMA symbol_list       [symbol_list_COMMA]
  *                   T_SYM                           [symbol_list_SYM]
@@ -901,26 +904,47 @@ and parse_factor_MATRIX ts =
                 | SOME ts => SOME (EMatrix rows, ts) )))
 
 and parse_decl ts = 
-    (case parse_expr ts of
-        NONE => NONE
+    (case parse_decl_DEF ts of
+        NONE =>
+        (case parse_expr ts of
+            NONE => NONE
+            | SOME (e, ts) => SOME ((DeclExpression e), ts))
         | s => s)
 
-and parse_decl_DEF ts = unimplemented "parse_decl_DEF"
-and parse_decl_EXPR ts = unimplemented "parse_decl_EXPR"
+and parse_decl_DEF ts = 
+    (case expect_DEF ts of
+        NONE => NONE
+        | SOME ts =>
+        (case expect_SYM ts of
+            NONE => NONE
+            | SOME (name, ts) =>
+            (case expect_LPAREN ts of
+                NONE => NONE
+                | SOME ts =>
+                (case parse_symbol_list ts of
+                    NONE => NONE
+                    | SOME (params, ts) =>
+                    (case expect_RPAREN ts of
+                        NONE => NONE
+                        | SOME ts =>
+                        (case expect_EQUAL ts of
+                            NONE => NONE
+                            | SOME ts =>
+                            (case parse_expr ts of
+                                NONE => NONE
+                                | SOME (body, ts) => SOME ((DeclDefinition (name, params, body)), ts))))))))
+
 
 and parse_symbol_list ts = unimplemented "parse_symbol_list"
 and parse_symbol_list_COMMA ts = unimplemented "parse_symbol_list_COMMA"
 and parse_symbol_list_SYM ts = unimplemented "parse_symbol_list_SYM"
 
 fun parse tokens = 
-    (case parse_decl tokens
+    (case parse_expr tokens
       of SOME (e,[]) => e
        | _ => parseError "Cannot parse expression")
 
 
-
-datatype decl = DeclDefinition of string * (string list) * expr
-              | DeclExpression of expr
 
 
 fun parse_wdef tokens = unimplemented "parse_wdef"
