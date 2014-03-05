@@ -1,4 +1,4 @@
-(* 
+(*
  *   CODE FOR HOMEWORK 4
  *)
 
@@ -14,7 +14,7 @@ structure Evaluator = struct
   fun evalError msg = raise Evaluation msg
 
 
-  (* 
+  (*
    *   Primitive operations
    *)
 
@@ -31,17 +31,17 @@ structure Evaluator = struct
   fun primLess (I.VInt a) (I.VInt b) = I.VBool (a<b)
     | primLess _ _ = I.VBool false
 
-			 
+
   fun lookup (name:string) [] = evalError ("failed lookup for "^name)
-    | lookup name ((n,v)::env) = 
-        if (n = name) then 
+    | lookup name ((n,v)::env) =
+        if (n = name) then
 	  v
-	else lookup name env 
+	else lookup name env
 
 
   (*
    *   Evaluation functions
-   * 
+   *
    *)
 
 
@@ -56,11 +56,11 @@ structure Evaluator = struct
     | eval env (I.EPrimCall2 (f,e1,e2)) = f (eval env e1) (eval env e2)
     | eval env (I.ERecord fs) = evalError "ERecord not implemented"
     | eval env (I.EField (e,s)) = evalError "EField not implemented"
-      
+
   and evalApp _ (I.VClosure (n,body,env)) v = eval ((n,v)::env) body
     | evalApp _ (I.VRecClosure (f,n,body,env)) v = let
 	  val new_env = [(f,I.VRecClosure (f,n,body,env)),(n,v)]@env
-      in 
+      in
 	  eval new_env body
       end
     | evalApp _ _ _ = evalError "cannot apply non-functional value"
@@ -68,7 +68,7 @@ structure Evaluator = struct
   and evalIf env (I.VBool true) f g = eval env f
     | evalIf env (I.VBool false) f g = eval env g
     | evalIf _ _ _ _ = evalError "evalIf"
-		       
+
   and evalLet env id v body = eval ((id,v)::env) body
 
   and evalLetFun env id param expr body = let
@@ -78,19 +78,19 @@ structure Evaluator = struct
   end
 
 
-  (* 
+  (*
    *   Initial environment (already in a form suitable for the environment)
    *)
 
-  val initialEnv = 
-      [("add", I.VClosure ("a", 
-			   I.EFun ("b", 
+  val initialEnv =
+      [("add", I.VClosure ("a",
+			   I.EFun ("b",
 				   I.EPrimCall2 (primPlus,
 						 I.EIdent "a",
 						 I.EIdent "b")),
 			   [])),
-       ("sub", I.VClosure ("a", 
-			   I.EFun ("b", 
+       ("sub", I.VClosure ("a",
+			   I.EFun ("b",
 				   I.EPrimCall2 (primMinus,
 						 I.EIdent "a",
 						 I.EIdent "b")),
@@ -107,6 +107,6 @@ structure Evaluator = struct
 						  I.EIdent "a",
 						  I.EIdent "b")),
 			    []))]
-  
-				 
+
+
 end

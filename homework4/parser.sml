@@ -1,4 +1,4 @@
-(* 
+(*
  *   CODE FOR HOMEWORK 4
  *)
 
@@ -7,14 +7,14 @@ structure Parser =  struct
 
   (*
    *  Wrapper around the regexp library
-   *)      
+   *)
 
   structure R = RegExpFn (structure P = AwkSyntax structure E = DfaEngine)
 
   structure I = InternalRepresentation
-                
+
   (* match a compiled regular expression against a list of characters *)
-                
+
   fun matchRE' re cs = let
     val prefix = R.prefix re List.getItem
     fun getMatch NONE = NONE
@@ -26,9 +26,9 @@ structure Parser =  struct
   in
     getMatch (prefix cs)
   end
-                       
+
   (* match a string regular expression against a list of characters *)
-                       
+
   fun matchRE re cs = matchRE' (R.compileString re) cs
 
 
@@ -36,11 +36,11 @@ structure Parser =  struct
   exception Parsing of string
 
   fun parseError msg = raise Parsing msg
-                         
-                         
 
 
-  (* 
+
+
+  (*
    *   A simple lexer
    *
    *   Details in lecture 5
@@ -49,18 +49,18 @@ structure Parser =  struct
    *
    *)
 
-  datatype token = T_LET 
+  datatype token = T_LET
                  | T_IN
-                 | T_SYM of string 
-                 | T_INT of int 
-                 | T_TRUE 
+                 | T_SYM of string
+                 | T_INT of int
+                 | T_TRUE
                  | T_FALSE
                  | T_EQUAL
 		 | T_LESS
-                 | T_IF 
+                 | T_IF
                  | T_THEN
                  | T_ELSE
-                 | T_LPAREN 
+                 | T_LPAREN
                  | T_RPAREN
                  | T_PLUS
                  | T_MINUS
@@ -114,9 +114,9 @@ structure Parser =  struct
     | stringOfToken T_MATCH = "T_MATCH"
     | stringOfToken T_WITH = "T_WITH"
 
-                   
+
   fun whitespace _ = NONE
-                     
+
   fun produceSymbol "let" = SOME (T_LET)
     | produceSymbol "in" = SOME (T_IN)
     | produceSymbol "true" = SOME (T_TRUE)
@@ -127,11 +127,11 @@ structure Parser =  struct
     | produceSymbol "match" = SOME (T_MATCH)
     | produceSymbol "with" = SOME (T_WITH)
     | produceSymbol text = SOME (T_SYM text)
-                           
+
   fun produceInt text = (case Int.fromString text
                           of NONE => parseError "integer literal out of bounds"
                            | SOME i => SOME (T_INT i))
-                        
+
   fun produceEqual _ = SOME (T_EQUAL)
   fun produceLess _ = SOME (T_LESS)
   fun produceLParen _ = SOME (T_LPAREN)
@@ -156,8 +156,8 @@ structure Parser =  struct
   fun produceDot _ = SOME (T_DOT)
   fun produceHash _ = SOME (T_HASH)
   fun produceBar _ = SOME (T_BAR)
-                       
-  val tokens = let 
+
+  val tokens = let
     fun convert (re,f) = (R.compileString re, f)
   in
     map convert [("( |\\n|\\t)+",         whitespace),
@@ -184,8 +184,8 @@ structure Parser =  struct
                  ("\\[",                  produceLBracket),
                  ("\\]",                  produceRBracket)]
   end
-               
-               
+
+
   fun getToken cs = let
     fun loop [] = parseError ("cannot tokenize "^(implode cs))
       | loop ((re,f)::xs) = (case matchRE' re cs
@@ -194,45 +194,45 @@ structure Parser =  struct
   in
     loop tokens
   end
-                    
-                    
+
+
   fun lex []  = []
     | lex cs = let
         val (token,cs') = getToken cs
       in
-        case token 
+        case token
          of NONE => lex cs'
           | SOME t => t::(lex cs')
       end
-               
-               
+
+
   fun lexString str = lex (explode str)
-                      
-                      
-                           
 
 
 
-  (* 
+
+
+
+  (*
    *   A SIMPLE PARSER FOR AN ML-LIKE SYNTAX
-   * 
    *
-   *   expr ::= eterm T_EQUAL eterm        
-   *            eterm T_LESS eterm         
-   *            eterm                      
    *
-   *   eterm ::= cterm T_DCOLON cterm      
-   *             cterm                     
+   *   expr ::= eterm T_EQUAL eterm
+   *            eterm T_LESS eterm
+   *            eterm
    *
-   *   cterm ::= term T_PLUS term         
-   *             term T_MINUS term        
-   *             term                     
+   *   eterm ::= cterm T_DCOLON cterm
+   *             cterm
    *
-   *   term :: = aterm aterm_list        
-   *            
+   *   cterm ::= term T_PLUS term
+   *             term T_MINUS term
+   *             term
+   *
+   *   term :: = aterm aterm_list
+   *
    *   aterm_list ::= aterm aterm_list                [aterm_list_ATERM_LIST]
    *                  <empty>                         [aterm_list_EMPTY]
-   *   
+   *
    *   aterm ::= T_INT                                      [aterm_INT]
    *             T_TRUE                                     [aterm_TRUE]
    *             T_FALSE                                    [aterm_FALSE]
@@ -251,13 +251,13 @@ structure Parser =  struct
   fun expect_SYM ((T_SYM s)::ts) = SOME (s,ts)
     | expect_SYM _ = NONE
 
-  (*   expect tokens ts 
+  (*   expect tokens ts
    *   checks if ts starts with tokens specified
-   *   this can only be used for tokens that do not parse to a value 
+   *   this can only be used for tokens that do not parse to a value
    *)
 
   fun expect [] ts = SOME ts
-    | expect (token::tokens) (t::ts) = if token = t then 
+    | expect (token::tokens) (t::ts) = if token = t then
 					 expect tokens ts
 				       else NONE
     | expect _ _ = NONE
@@ -292,11 +292,11 @@ structure Parser =  struct
   fun expect_BAR ts = expect [T_BAR] ts
   fun expect_MATCH ts = expect [T_MATCH] ts
   fun expect_WITH ts = expect [T_WITH] ts
-			  
+
 
 
   fun choose [] ts = NONE
-    | choose (parser::parsers) ts = 
+    | choose (parser::parsers) ts =
       (case parser ts
 	of NONE => choose parsers ts
 	 | s => s)
@@ -312,48 +312,48 @@ structure Parser =  struct
 
 
 
-  fun parse_expr ts = 
+  fun parse_expr ts =
       (case parse_eterm ts
 	of NONE => NONE
-	 | SOME (e1,ts) => 
+	 | SOME (e1,ts) =>
 	   (case expect_EQUAL ts
 	     of NONE => (case expect_LESS ts
 			  of NONE => SOME (e1,ts)
-			   | SOME ts => 
+			   | SOME ts =>
 			     (case parse_eterm ts
 			       of NONE => NONE
 				| SOME (e2,ts) => SOME (call2 "less" e1 e2, ts)))
-	      | SOME ts => 
+	      | SOME ts =>
 		(case parse_eterm ts
 		  of NONE => NONE
 		   | SOME (e2,ts) => SOME (call2 "equal" e1 e2, ts))))
 
 
-  and parse_eterm ts = 
+  and parse_eterm ts =
       (case parse_cterm ts
 	of NONE => NONE
-	 | SOME (e1,ts) => 
+	 | SOME (e1,ts) =>
 	   (case expect_DCOLON ts
 	     of NONE => SOME (e1,ts)
-	      | SOME ts => 
+	      | SOME ts =>
 		(case parse_cterm ts
 		  of NONE => NONE
 		   | SOME (e2,ts) => SOME (call2 "cons" e1 e2, ts))))
 
 
-  and parse_cterm ts = 
+  and parse_cterm ts =
       (case parse_term ts
 	of NONE => NONE
-	 | SOME (e1,ts) => 
+	 | SOME (e1,ts) =>
 	   (case expect_PLUS ts
 	     of NONE =>
 		(case expect_MINUS ts
 		  of NONE => SOME (e1,ts)
-		   | SOME ts => 
+		   | SOME ts =>
 		     (case parse_term ts
 		       of NONE => NONE
 			| SOME (e2,ts) => SOME (call2 "sub" e1 e2, ts)))
-	      | SOME ts => 
+	      | SOME ts =>
 		(case parse_term ts
 		  of NONE => NONE
 		   | SOME (e2,ts) => SOME (call2 "add" e1 e2, ts))))
@@ -366,14 +366,14 @@ structure Parser =  struct
   in
     (case parse_aterm ts
        of NONE => NONE
-        | SOME (at,ts) => 
+        | SOME (at,ts) =>
           (case parse_aterm_list ts
              of NONE => NONE
               | SOME (ats,ts) => SOME (convert (at::ats),ts)))
   end
-   
 
-  and parse_aterm ts = 
+
+  and parse_aterm ts =
       choose [parse_aterm_INT,
               parse_aterm_TRUE,
               parse_aterm_FALSE,
@@ -385,126 +385,126 @@ structure Parser =  struct
 	      parse_aterm_LET_FUN
 	     ] ts
 
-  and parse_aterm_INT ts = 
-    (case expect_INT ts 
+  and parse_aterm_INT ts =
+    (case expect_INT ts
       of NONE => NONE
        | SOME (i,ts) => SOME (I.EVal (I.VInt i),ts))
 
-  and parse_aterm_TRUE ts = 
+  and parse_aterm_TRUE ts =
     (case expect_TRUE ts
       of NONE => NONE
        | SOME ts => SOME (I.EVal (I.VBool true),ts))
 
-  and parse_aterm_FALSE ts = 
+  and parse_aterm_FALSE ts =
     (case expect_FALSE ts
       of NONE => NONE
        | SOME ts => SOME (I.EVal (I.VBool false),ts))
 
-  and parse_aterm_SYM ts = 
+  and parse_aterm_SYM ts =
     (case expect_SYM ts
       of NONE => NONE
        | SOME (s,ts) => SOME (I.EIdent s,ts))
 
-  and parse_aterm_FUN ts = 
-    (case expect_BACKSLASH ts 
+  and parse_aterm_FUN ts =
+    (case expect_BACKSLASH ts
       of NONE => NONE
-       | SOME ts => 
+       | SOME ts =>
 	 (case expect_SYM ts
 	   of NONE => NONE
-	    | SOME (s,ts) => 
+	    | SOME (s,ts) =>
 	      (case expect_RARROW ts
 		of NONE => NONE
-		 | SOME ts => 
+		 | SOME ts =>
 		   (case parse_expr ts
 		     of NONE => NONE
 		      | SOME (e,ts) => SOME (I.EFun (s,e), ts)))))
 
-  and parse_aterm_PARENS ts = 
+  and parse_aterm_PARENS ts =
     (case expect_LPAREN ts
       of NONE => NONE
        | SOME ts =>
          (case parse_expr ts
            of NONE => NONE
-            | SOME (e,ts) => 
+            | SOME (e,ts) =>
               (case expect_RPAREN ts
                 of NONE => NONE
                 | SOME ts => SOME (e,ts))))
 
-  and parse_aterm_IF ts = 
+  and parse_aterm_IF ts =
     (case expect_IF ts
       of NONE => NONE
-       | SOME ts => 
+       | SOME ts =>
          (case parse_expr ts
            of NONE => NONE
-            | SOME (e1,ts) => 
+            | SOME (e1,ts) =>
               (case expect_THEN ts
                 of NONE => NONE
-                 | SOME ts => 
+                 | SOME ts =>
                    (case parse_expr ts
                      of NONE => NONE
-                      | SOME (e2,ts) => 
+                      | SOME (e2,ts) =>
                         (case expect_ELSE ts
                           of NONE => NONE
-                           | SOME ts => 
+                           | SOME ts =>
                              (case parse_expr ts
                                of NONE => NONE
                                 | SOME (e3,ts) => SOME (I.EIf (e1,e2,e3),ts)))))))
 
-  and parse_aterm_LET ts = 
-    (case expect_LET ts 
+  and parse_aterm_LET ts =
+    (case expect_LET ts
       of NONE => NONE
-       | SOME ts => 
-         (case expect_SYM ts 
+       | SOME ts =>
+         (case expect_SYM ts
            of NONE => NONE
-            | SOME (s,ts) => 
+            | SOME (s,ts) =>
               (case expect_EQUAL ts
                 of NONE => NONE
-                 | SOME ts => 
+                 | SOME ts =>
                    (case parse_expr ts
                      of NONE => NONE
-                      | SOME (e1,ts) => 
+                      | SOME (e1,ts) =>
                         (case expect_IN ts
                           of NONE => NONE
-                           | SOME ts => 
+                           | SOME ts =>
                              (case parse_expr ts
                                of NONE => NONE
                                 | SOME (e2,ts) => SOME (I.ELet (s,e1,e2),ts)))))))
 
-  and parse_aterm_LET_FUN ts = 
-    (case expect_LET ts 
+  and parse_aterm_LET_FUN ts =
+    (case expect_LET ts
       of NONE => NONE
-       | SOME ts => 
-         (case expect_SYM ts 
+       | SOME ts =>
+         (case expect_SYM ts
            of NONE => NONE
-            | SOME (s,ts) => 
+            | SOME (s,ts) =>
 	      (case expect_SYM ts
                 of NONE => NONE
-                 | SOME (param,ts) => 
+                 | SOME (param,ts) =>
                    (case expect_EQUAL ts
                      of NONE => NONE
-                      | SOME ts => 
+                      | SOME ts =>
                         (case parse_expr ts
                           of NONE => NONE
-                           | SOME (e1,ts) => 
+                           | SOME (e1,ts) =>
                              (case expect_IN ts
                                of NONE => NONE
-                                | SOME ts => 
+                                | SOME ts =>
                                   (case parse_expr ts
                                     of NONE => NONE
-                                     | SOME (e2,ts) => 
+                                     | SOME (e2,ts) =>
                                          SOME (I.ELetFun (s,param,e1,e2),ts))))))))
 
 
 
-  and parse_aterm_list ts = 
+  and parse_aterm_list ts =
       choose [parse_aterm_list_ATERM_LIST,
 	      parse_aterm_list_EMPTY
-	     ] ts 
+	     ] ts
 
-  and parse_aterm_list_ATERM_LIST ts = 
+  and parse_aterm_list_ATERM_LIST ts =
     (case parse_aterm ts
       of NONE => NONE
-       | SOME (at,ts) => 
+       | SOME (at,ts) =>
          (case parse_aterm_list ts
            of NONE => NONE
             | SOME (ats,ts) => SOME (at::ats,ts)))
@@ -512,11 +512,11 @@ structure Parser =  struct
   and parse_aterm_list_EMPTY ts = SOME ([], ts)
 
 
-  fun parse ts = 
+  fun parse ts =
       (case parse_expr ts
         of SOME (e,[]) => e
          | SOME (_,_)  => parseError "leftover characters past parsed expression"
          | NONE => parseError "cannot parse input")
-      
+
 
 end
