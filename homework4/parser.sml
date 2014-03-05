@@ -241,11 +241,10 @@ structure Parser =  struct
    *             T_LPAREN expr T_RPAREN                        [aterm_PARENS]
    *             T_IF expr T_THEN expr T_ELSE expr             [aterm_IF]
    *             T_LET T_SYM T_EQUAL expr T_IN expr            [aterm_LET]
-   *             T_LET T_SYM T_SYM T_EQUAL expr T_IN expr      [aterm_LET_FUN] ** XXX: TO REMOVE?
-   *             T_LET T_SYM sym_list T_EQUAL expr T_IN expr   [aterm_LET_CURRY]
+   *             T_LET T_SYM sym_list T_EQUAL expr T_IN expr   [aterm_LET_FUN]
    *
-   *   sym_list ::= T_SYM sym_list
-   *                T_SYM
+   *   sym_list ::= T_SYM sym_list                    [sym_list_MULTIPLE]
+   *                T_SYM                             [sym_list_SINGLE]
    *)
 
 
@@ -386,8 +385,7 @@ structure Parser =  struct
               parse_aterm_PARENS,
 	      parse_aterm_IF,
 	      parse_aterm_LET,
-        (*parse_aterm_LET_FUN,*)
-        parse_aterm_LET_CURRY
+        parse_aterm_LET_FUN
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -482,30 +480,6 @@ structure Parser =  struct
          (case expect_SYM ts
            of NONE => NONE
             | SOME (fun_name,ts) =>
-	      (case expect_SYM ts
-                of NONE => NONE
-                 | SOME (param,ts) =>
-                   (case expect_EQUAL ts
-                     of NONE => NONE
-                      | SOME ts =>
-                        (case parse_expr ts
-                          of NONE => NONE
-                           | SOME (e1,ts) =>
-                             (case expect_IN ts
-                               of NONE => NONE
-                                | SOME ts =>
-                                  (case parse_expr ts
-                                    of NONE => NONE
-                                     | SOME (e2,ts) =>
-                                         SOME (I.ELetFun (fun_name,param,e1,e2),ts))))))))
-
-  and parse_aterm_LET_CURRY ts =
-    (case expect_LET ts
-      of NONE => NONE
-       | SOME ts =>
-         (case expect_SYM ts
-           of NONE => NONE
-            | SOME (fun_name,ts) =>
             (case parse_sym_list ts
                 of NONE => NONE
                 | SOME ([], ts) => NONE (* Cause the compiler ain't smart *)
@@ -528,17 +502,6 @@ structure Parser =  struct
 
   and convert_list_to_efun_nest (symbol::symbols) body = I.EFun (symbol,(convert_list_to_efun_nest symbols body))
     | convert_list_to_efun_nest [] body = body
-
-(*  and parse_aterm_LET_CURRY ts =
-    (case expect_LET ts
-      of NONE => NONE
-      | SOME ts =>
-      (case expect_SYM ts =>
-        of NONE => NONE
-        | SOME (s, ts) =>
-        (case parse_sym_list ts
-          of SOME ([], ts) =>
-          | SOME (symbols, ts) =>  )))*)
 
   and parse_sym_list ts =
     choose [parse_sym_list_MULTIPLE,
