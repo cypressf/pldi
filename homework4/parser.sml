@@ -233,15 +233,19 @@ structure Parser =  struct
    *   aterm_list ::= aterm aterm_list                [aterm_list_ATERM_LIST]
    *                  <empty>                         [aterm_list_EMPTY]
    *
-   *   aterm ::= T_INT                                      [aterm_INT]
-   *             T_TRUE                                     [aterm_TRUE]
-   *             T_FALSE                                    [aterm_FALSE]
-   *             T_SYM                                      [aterm_SYM]
-   *             T_BACKSLASH T_SYM T_RARROW expr            [aterm_FUN]
-   *             T_LPAREN expr T_RPAREN                     [aterm_PARENS]
-   *             T_IF expr T_THEN expr T_ELSE expr          [aterm_IF]
-   *             T_LET T_SYM T_EQUAL expr T_IN expr         [aterm_LET]
-   *             T_LET T_SYM T_SYM T_EQUAL expr T_IN expr   [aterm_LET_FUN]
+   *   aterm ::= T_INT                                         [aterm_INT]
+   *             T_TRUE                                        [aterm_TRUE]
+   *             T_FALSE                                       [aterm_FALSE]
+   *             T_SYM                                         [aterm_SYM]
+   *             T_BACKSLASH T_SYM T_RARROW expr               [aterm_FUN]
+   *             T_LPAREN expr T_RPAREN                        [aterm_PARENS]
+   *             T_IF expr T_THEN expr T_ELSE expr             [aterm_IF]
+   *             T_LET T_SYM T_EQUAL expr T_IN expr            [aterm_LET]
+   *             T_LET T_SYM T_SYM T_EQUAL expr T_IN expr      [aterm_LET_FUN] ** XXX: TO REMOVE?
+   *             T_LET T_SYM sym_list T_EQUAL expr T_IN expr   [aterm_LET_CURRY]
+   *
+   *   sym_list ::= T_SYM sym_list
+   *                T_SYM
    *)
 
 
@@ -382,7 +386,8 @@ structure Parser =  struct
               parse_aterm_PARENS,
 	      parse_aterm_IF,
 	      parse_aterm_LET,
-	      parse_aterm_LET_FUN
+        (*parse_aterm_LET_FUN,*)
+        parse_aterm_LET_CURRY
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -476,7 +481,7 @@ structure Parser =  struct
        | SOME ts =>
          (case expect_SYM ts
            of NONE => NONE
-            | SOME (s,ts) =>
+            | SOME (fun_name,ts) =>
 	      (case expect_SYM ts
                 of NONE => NONE
                  | SOME (param,ts) =>
@@ -492,8 +497,66 @@ structure Parser =  struct
                                   (case parse_expr ts
                                     of NONE => NONE
                                      | SOME (e2,ts) =>
-                                         SOME (I.ELetFun (s,param,e1,e2),ts))))))))
+                                         SOME (I.ELetFun (fun_name,param,e1,e2),ts))))))))
 
+  and parse_aterm_LET_CURRY ts =
+    (case expect_LET ts
+      of NONE => NONE
+       | SOME ts =>
+         (case expect_SYM ts
+           of NONE => NONE
+            | SOME (fun_name,ts) =>
+            (case parse_sym_list ts
+                of NONE => NONE
+                | SOME ([], ts) => NONE (* Cause the compiler ain't smart *)
+                | SOME (param::params, ts) =>
+                   (case expect_EQUAL ts
+                     of NONE => NONE
+                      | SOME ts =>
+                        (case parse_expr ts
+                          of NONE => NONE
+                           | SOME (body,ts) =>
+                             (case expect_IN ts
+                               of NONE => NONE
+                                | SOME ts =>
+                                  (case parse_expr ts
+                                    of NONE => NONE
+                                     | SOME (replacement_target,ts) =>
+                                         SOME (I.ELetFun (fun_name,param,(convert_list_to_efun_nest params body),replacement_target),ts))))))))
+
+
+
+  and convert_list_to_efun_nest (symbol::symbols) body = I.EFun (symbol,(convert_list_to_efun_nest symbols body))
+    | convert_list_to_efun_nest [] body = body
+
+(*  and parse_aterm_LET_CURRY ts =
+    (case expect_LET ts
+      of NONE => NONE
+      | SOME ts =>
+      (case expect_SYM ts =>
+        of NONE => NONE
+        | SOME (s, ts) =>
+        (case parse_sym_list ts
+          of SOME ([], ts) =>
+          | SOME (symbols, ts) =>  )))*)
+
+  and parse_sym_list ts =
+    choose [parse_sym_list_MULTIPLE,
+      parse_sym_list_SINGLE
+    ] ts
+
+  and parse_sym_list_MULTIPLE ts =
+    (case expect_SYM ts
+      of NONE => NONE
+      | SOME (symbol, ts) =>
+        (case parse_sym_list ts
+          of NONE => NONE
+          | SOME (symbols, ts) => SOME (symbol::symbols,ts)))
+
+  and parse_sym_list_SINGLE ts =
+    (case expect_SYM ts
+      of NONE => NONE
+      | SOME (symbol, ts) => SOME ([symbol], ts))
 
 
   and parse_aterm_list ts =
