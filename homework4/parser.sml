@@ -242,9 +242,14 @@ structure Parser =  struct
    *             T_IF expr T_THEN expr T_ELSE expr             [aterm_IF]
    *             T_LET T_SYM T_EQUAL expr T_IN expr            [aterm_LET]
    *             T_LET T_SYM sym_list T_EQUAL expr T_IN expr   [aterm_LET_FUN]
+   *             T_LBRACKET expr_list T_RBRACKET               [aterm_EXPR_LIST]
+   *             T_LBRACKET T_RBRACKET                         [aterm_EXPR_LIST_EMPTY]
    *
    *   sym_list ::= T_SYM sym_list                    [sym_list_MULTIPLE]
    *                T_SYM                             [sym_list_SINGLE]
+   *
+   *   expr_list ::= expr T_COMMA expr_list                [expr_list_MULTIPLE]
+   *                 expr                                  [expr_list_SINGLE]
    *)
 
 
@@ -385,7 +390,9 @@ structure Parser =  struct
               parse_aterm_PARENS,
 	      parse_aterm_IF,
 	      parse_aterm_LET,
-        parse_aterm_LET_FUN
+        parse_aterm_LET_FUN,
+        parse_aterm_EXPR_LIST,
+        parse_aterm_EXPR_LIST_EMPTY
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -498,7 +505,44 @@ structure Parser =  struct
                                      | SOME (replacement_target,ts) =>
                                          SOME (I.ELetFun (fun_name,param,(convert_list_to_efun_nest params body),replacement_target),ts))))))))
 
+  and parse_aterm_EXPR_LIST_EMPTY ts =
+    (case expect_LBRACKET ts 
+      of NONE => NONE
+      | SOME ts =>
+      (case expect_RBRACKET ts
+        of NONE => NONE
+        | SOME ts => SOME (I.EList [], ts)))
 
+  and parse_aterm_EXPR_LIST ts =
+    (case expect_LBRACKET ts
+      of NONE => NONE
+      | SOME ts =>
+      (case parse_expr_list ts
+        of NONE => NONE
+        | SOME expressions =>
+        (case expect_RBRACKET ts
+          of NONE => NONE
+          | SOME => SOME (I.EList expressions, ts) )))
+
+  and parse_expr_list ts =
+    choose [parse_expr_list_MULTIPLE,
+            parse_expr_list_SINGLE] ts
+
+  and parse_expr_list_MULTIPLE ts =
+    (case parse_expr ts
+      of NONE => NONE
+      | SOME (e, ts) =>
+        (case expect_COMMA ts
+          of NONE => NONE
+          | SOME ts =>
+           (case parse_expr_list ts
+            of NONE => NONE
+            | SOME (I.EList es, ts) => SOME (I.EList (e::es), ts) )))
+
+  and parse_expr_list_SINGLE ts =
+    (case parse_expr ts
+      of NONE => NONE
+      | SOME (e, ts) => SOME (I.EList [e], ts))
 
   and convert_list_to_efun_nest (symbol::symbols) body = I.EFun (symbol,(convert_list_to_efun_nest symbols body))
     | convert_list_to_efun_nest [] body = body
@@ -536,6 +580,7 @@ structure Parser =  struct
             | SOME (ats,ts) => SOME (at::ats,ts)))
 
   and parse_aterm_list_EMPTY ts = SOME ([], ts)
+
 
 
   fun parse ts =
