@@ -51,6 +51,7 @@ structure InternalRepresentation = struct
       | strE (EPrimCall2 (f,e1,e2)) = strCon "EPrimCall2" strE [e1,e2]
       | strE (ERecord fs) = $ ["ERecord [", $+ (map strF fs), "]"]
       | strE (EField (e,s)) = $ ["EField (", strE e, ",", strS s, ")"]
+      | strE (EList es) = $ ["EList [", $+ (map strE es), "]"]
   in
     strE e
   end

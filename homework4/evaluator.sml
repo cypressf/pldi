@@ -73,6 +73,7 @@ structure Evaluator = struct
     | eval env (I.EPrimCall2 (f,e1,e2)) = f (eval env e1) (eval env e2)
     | eval env (I.ERecord fs) = evalError "ERecord not implemented"
     | eval env (I.EField (e,s)) = evalError "EField not implemented"
+    | eval env (I.EList es) = I.VList (map (eval env) es)
 
   and evalApp _ (I.VClosure (n,body,env)) v = eval ((n,v)::env) body
     | evalApp _ (I.VRecClosure (f,n,body,env)) v = let

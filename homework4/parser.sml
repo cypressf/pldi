@@ -391,8 +391,8 @@ structure Parser =  struct
 	      parse_aterm_IF,
 	      parse_aterm_LET,
         parse_aterm_LET_FUN,
-        parse_aterm_EXPR_LIST,
-        parse_aterm_EXPR_LIST_EMPTY
+        parse_aterm_EXPR_LIST_EMPTY,
+        parse_aterm_EXPR_LIST
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -506,7 +506,7 @@ structure Parser =  struct
                                          SOME (I.ELetFun (fun_name,param,(convert_list_to_efun_nest params body),replacement_target),ts))))))))
 
   and parse_aterm_EXPR_LIST_EMPTY ts =
-    (case expect_LBRACKET ts 
+    (case expect_LBRACKET ts
       of NONE => NONE
       | SOME ts =>
       (case expect_RBRACKET ts
@@ -519,10 +519,10 @@ structure Parser =  struct
       | SOME ts =>
       (case parse_expr_list ts
         of NONE => NONE
-        | SOME expressions =>
+        | SOME (I.EList expressions, ts) =>
         (case expect_RBRACKET ts
           of NONE => NONE
-          | SOME => SOME (I.EList expressions, ts) )))
+          | SOME ts => SOME (I.EList expressions, ts) )))
 
   and parse_expr_list ts =
     choose [parse_expr_list_MULTIPLE,
