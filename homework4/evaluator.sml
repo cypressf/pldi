@@ -49,6 +49,9 @@ structure Evaluator = struct
   fun primTl (I.VList (hd::tl)) = I.VList tl
     | primTl _ = evalError "primTl"
 
+  fun primInterval (I.VInt i) (I.VInt j) = if j<i then I.VList [] else I.VList (List.tabulate (j-i+1, fn x => I.VInt (x+i)))
+    | primInterval _ _ = evalError "primInterval"
+
   fun lookup (name:string) [] = evalError ("failed lookup for "^name)
     | lookup name ((n,v)::env) =
         if (n = name) then
@@ -138,7 +141,13 @@ structure Evaluator = struct
               , [])),
        ("tl", I.VClosure ("l"
               , I.EPrimCall1 (primTl, I.EIdent "l")
-              , []))]
+              , [])),
+       ("interval", I.VClosure ("a",
+         I.EFun ("b",
+           I.EPrimCall2 (primInterval,
+             I.EIdent "a",
+             I.EIdent "b")),
+         []))]
 
 
 end

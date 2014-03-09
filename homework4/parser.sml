@@ -516,6 +516,7 @@ structure Parser =  struct
         of NONE => NONE
         | SOME ts => SOME (I.EList [], ts)))
 
+(* XXX: This is non-idiomatic because of SOME (I.EList expressions, ts) => *)
   and parse_aterm_EXPR_LIST ts =
     (case expect_LBRACKET ts
       of NONE => NONE
@@ -525,12 +526,14 @@ structure Parser =  struct
         | SOME (I.EList expressions, ts) =>
         (case expect_RBRACKET ts
           of NONE => NONE
-          | SOME ts => SOME (I.EList expressions, ts) )))
+          | SOME ts => SOME (I.EList expressions, ts) )
+        | SOME (_, ts) => NONE))
 
   and parse_expr_list ts =
     choose [parse_expr_list_MULTIPLE,
             parse_expr_list_SINGLE] ts
 
+(* XXX: This is non-idiomatic because of SOME (I.EList es, ts) => *)
   and parse_expr_list_MULTIPLE ts =
     (case parse_expr ts
       of NONE => NONE
@@ -540,7 +543,8 @@ structure Parser =  struct
           | SOME ts =>
            (case parse_expr_list ts
             of NONE => NONE
-            | SOME (I.EList es, ts) => SOME (I.EList (e::es), ts) )))
+            | SOME (I.EList es, ts) => SOME (I.EList (e::es), ts)
+            | SOME (_, ts) => NONE )))
 
   and parse_expr_list_SINGLE ts =
     (case parse_expr ts
@@ -610,92 +614,24 @@ structure Parser =  struct
                                                       | SOME (e3, ts) => SOME ((do_match e1 e2 e3 s1 s2), ts))))))))))))))
 
   and do_match e1 e2 e3 s1 s2 =
-    I.EIf (I.EApp
-          (I.EApp
-            (I.EIdent "equal"
-            , e1
-            )
-          , I.EVal (I.VList [])
-          )
+    I.EIf ( I.EApp ( I.EApp (I.EIdent "equal"
+                            , e1
+                            )
+                   , I.EVal ( I.VList [] )
+                   )
           , e2
-          , I.ELet (s1
-                 , I.EApp ( I.EIdent "hd"
-                        , e1
-                        )
-                 , I.ELet (
-                          s2
-                        , I.EApp (
-                                 I.EIdent "tl"
-                               , e1
-                               )
-                        , e3
-                        )
-                 )
-        )
-
-(*
-
-
-    EIf (EApp
-          (EApp
-            (EIdent "equal"
-            , EApp (EApp (EIdent "cons"
-                         , EVal (VInt 1))
-                   , EApp (EApp (EIdent "cons",EVal (VInt 2)),EIdent "nil"))
-            )
-          , EVal (VList [])
+          , I.ELet ( s1
+                   , I.EApp ( I.EIdent "hd"
+                            , e1
+                            )
+                   , I.ELet ( s2
+                            , I.EApp ( I.EIdent "tl"
+                                     , e1
+                                     )
+                            , e3
+                            )
+                   )
           )
-          , EVal (VInt 0)
-          , ELet ("x"
-                 , EApp ( EIdent "hd"
-                        , EApp (
-                                 EApp (
-                                        EIdent "cons"
-                                      , EVal (VInt 1)
-                                      )
-                                , EApp (
-                                         EApp (
-                                                EIdent "cons"
-                                              , EVal (VInt 2)
-                                              )
-                                       , EIdent "nil"
-                                       )
-                                )
-                        )
-                 , ELet (
-                          "xs"
-                        , EApp (
-                                 EIdent "tl"
-                               , EApp (
-                                        EApp (
-                                               EIdent "cons"
-                                             , EVal (VInt 1)
-                                             )
-                                      , EApp (
-                                               EApp (
-                                                      EIdent "cons"
-                                                    , EVal (VInt 2)
-                                                    )
-                                             , EIdent "nil"
-                                             )
-                                      )
-                               )
-                        , EApp (
-                                 EApp (
-                                        EIdent "add"
-                                      , EIdent "x"
-                                      )
-                               , EApp (
-                                        EIdent "hd"
-                                      , EIdent "xs")
-                               )
-                        )
-                 )
-        )*)
-
-  (*   *             T_MATCH expr T_WITH T_LBRACKET T_RBRACKET T_RARROW      []
-   *                     expr T_BAR T_SYM T_DCOLON T_SYM T_RARROW expr*)
-
 
   and parse_aterm_list ts =
       choose [parse_aterm_list_ATERM_LIST,
