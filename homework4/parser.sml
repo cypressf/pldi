@@ -233,17 +233,19 @@ structure Parser =  struct
    *   aterm_list ::= aterm aterm_list                [aterm_list_ATERM_LIST]
    *                  <empty>                         [aterm_list_EMPTY]
    *
-   *   aterm ::= T_INT                                         [aterm_INT]
-   *             T_TRUE                                        [aterm_TRUE]
-   *             T_FALSE                                       [aterm_FALSE]
-   *             T_SYM                                         [aterm_SYM]
-   *             T_BACKSLASH T_SYM T_RARROW expr               [aterm_FUN]
-   *             T_LPAREN expr T_RPAREN                        [aterm_PARENS]
-   *             T_IF expr T_THEN expr T_ELSE expr             [aterm_IF]
-   *             T_LET T_SYM T_EQUAL expr T_IN expr            [aterm_LET]
-   *             T_LET T_SYM sym_list T_EQUAL expr T_IN expr   [aterm_LET_FUN]
-   *             T_LBRACKET expr_list T_RBRACKET               [aterm_EXPR_LIST]
-   *             T_LBRACKET T_RBRACKET                         [aterm_EXPR_LIST_EMPTY]
+   *   aterm ::= T_INT                                                   [aterm_INT]
+   *             T_TRUE                                                  [aterm_TRUE]
+   *             T_FALSE                                                 [aterm_FALSE]
+   *             T_SYM                                                   [aterm_SYM]
+   *             T_BACKSLASH T_SYM T_RARROW expr                         [aterm_FUN]
+   *             T_LPAREN expr T_RPAREN                                  [aterm_PARENS]
+   *             T_IF expr T_THEN expr T_ELSE expr                       [aterm_IF]
+   *             T_LET T_SYM T_EQUAL expr T_IN expr                      [aterm_LET]
+   *             T_LET T_SYM sym_list T_EQUAL expr T_IN expr             [aterm_LET_FUN]
+   *             T_LBRACKET expr_list T_RBRACKET                         [aterm_EXPR_LIST]
+   *             T_LBRACKET T_RBRACKET                                   [aterm_EXPR_LIST_EMPTY]
+   *             T_MATCH expr T_WITH T_LBRACKET T_RBRACKET T_RARROW      [aterm_MATCH]
+   *                     expr T_BAR T_SYM T_DCOLON T_SYM T_RARROW expr
    *
    *   sym_list ::= T_SYM sym_list                    [sym_list_MULTIPLE]
    *                T_SYM                             [sym_list_SINGLE]
@@ -392,7 +394,8 @@ structure Parser =  struct
 	      parse_aterm_LET,
         parse_aterm_LET_FUN,
         parse_aterm_EXPR_LIST_EMPTY,
-        parse_aterm_EXPR_LIST
+        parse_aterm_EXPR_LIST,
+        parse_aterm_MATCH
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -564,6 +567,134 @@ structure Parser =  struct
     (case expect_SYM ts
       of NONE => NONE
       | SOME (symbol, ts) => SOME ([symbol], ts))
+
+  and parse_aterm_MATCH ts =
+    (case expect_MATCH ts
+      of NONE => NONE
+      | SOME ts =>
+        (case parse_expr ts
+          of NONE => NONE
+          | SOME (e1, ts) =>
+            (case expect_WITH ts
+              of NONE => NONE
+              | SOME ts =>
+                (case expect_LBRACKET ts
+                  of NONE => NONE
+                  | SOME ts =>
+                    (case expect_RBRACKET ts
+                      of NONE => NONE
+                      | SOME ts =>
+                        (case expect_RARROW ts
+                          of NONE => NONE
+                          | SOME ts =>
+                            (case parse_expr ts
+                              of NONE => NONE
+                              | SOME (e2, ts) =>
+                                (case expect_BAR ts
+                                  of NONE => NONE
+                                  | SOME ts =>
+                                    (case expect_SYM ts
+                                      of NONE => NONE
+                                      | SOME (s1, ts) =>
+                                        (case expect_DCOLON ts
+                                          of NONE => NONE
+                                          | SOME ts =>
+                                            (case expect_SYM ts
+                                              of NONE => NONE
+                                              | SOME (s2, ts) =>
+                                                (case expect_RARROW ts
+                                                  of NONE => NONE
+                                                  | SOME ts =>
+                                                    (case parse_expr ts
+                                                      of NONE => NONE
+                                                      | SOME (e3, ts) => SOME ((do_match e1 e2 e3 s1 s2), ts))))))))))))))
+
+  and do_match e1 e2 e3 s1 s2 =
+    I.EIf (I.EApp
+          (I.EApp
+            (I.EIdent "equal"
+            , e1
+            )
+          , I.EVal (I.VList [])
+          )
+          , e2
+          , I.ELet (s1
+                 , I.EApp ( I.EIdent "hd"
+                        , e1
+                        )
+                 , I.ELet (
+                          s2
+                        , I.EApp (
+                                 I.EIdent "tl"
+                               , e1
+                               )
+                        , e3
+                        )
+                 )
+        )
+
+(*
+
+
+    EIf (EApp
+          (EApp
+            (EIdent "equal"
+            , EApp (EApp (EIdent "cons"
+                         , EVal (VInt 1))
+                   , EApp (EApp (EIdent "cons",EVal (VInt 2)),EIdent "nil"))
+            )
+          , EVal (VList [])
+          )
+          , EVal (VInt 0)
+          , ELet ("x"
+                 , EApp ( EIdent "hd"
+                        , EApp (
+                                 EApp (
+                                        EIdent "cons"
+                                      , EVal (VInt 1)
+                                      )
+                                , EApp (
+                                         EApp (
+                                                EIdent "cons"
+                                              , EVal (VInt 2)
+                                              )
+                                       , EIdent "nil"
+                                       )
+                                )
+                        )
+                 , ELet (
+                          "xs"
+                        , EApp (
+                                 EIdent "tl"
+                               , EApp (
+                                        EApp (
+                                               EIdent "cons"
+                                             , EVal (VInt 1)
+                                             )
+                                      , EApp (
+                                               EApp (
+                                                      EIdent "cons"
+                                                    , EVal (VInt 2)
+                                                    )
+                                             , EIdent "nil"
+                                             )
+                                      )
+                               )
+                        , EApp (
+                                 EApp (
+                                        EIdent "add"
+                                      , EIdent "x"
+                                      )
+                               , EApp (
+                                        EIdent "hd"
+                                      , EIdent "xs")
+                               )
+                        )
+                 )
+        )*)
+
+  (*   *             T_MATCH expr T_WITH T_LBRACKET T_RBRACKET T_RARROW      []
+   *                     expr T_BAR T_SYM T_DCOLON T_SYM T_RARROW expr*)
 
 
   and parse_aterm_list ts =
