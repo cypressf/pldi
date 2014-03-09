@@ -246,6 +246,7 @@ structure Parser =  struct
    *             T_LBRACKET T_RBRACKET                                   [aterm_EXPR_LIST_EMPTY]
    *             T_MATCH expr T_WITH T_LBRACKET T_RBRACKET T_RARROW      [aterm_MATCH]
    *                     expr T_BAR T_SYM T_DCOLON T_SYM T_RARROW expr
+   *             T_LBRACKET expr T_DDOTS expr T_RBRACKET             [aterm_INTERVAL]
    *
    *   sym_list ::= T_SYM sym_list                    [sym_list_MULTIPLE]
    *                T_SYM                             [sym_list_SINGLE]
@@ -395,7 +396,8 @@ structure Parser =  struct
         parse_aterm_LET_FUN,
         parse_aterm_EXPR_LIST_EMPTY,
         parse_aterm_EXPR_LIST,
-        parse_aterm_MATCH
+        parse_aterm_MATCH,
+        parse_aterm_INTERVAL
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -632,6 +634,23 @@ structure Parser =  struct
                             )
                    )
           )
+
+  and parse_aterm_INTERVAL ts = 
+    (case expect_LBRACKET ts
+      of NONE => NONE
+      | SOME ts =>
+      (case parse_expr ts
+        of NONE => NONE
+        | SOME (e1, ts) =>
+        (case expect_DDOTS ts
+          of NONE => NONE
+          | SOME ts => 
+          (case parse_expr ts
+            of NONE => NONE
+            | SOME (e2, ts) =>
+            (case expect_RBRACKET ts
+              of NONE => NONE
+              | SOME ts => SOME (I.EApp(I.EApp(I.EIdent "interval", e1), e2), ts))))))
 
   and parse_aterm_list ts =
       choose [parse_aterm_list_ATERM_LIST,
