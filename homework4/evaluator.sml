@@ -52,6 +52,8 @@ structure Evaluator = struct
   fun primInterval (I.VInt i) (I.VInt j) = if j<i then I.VList [] else I.VList (List.tabulate (j-i+1, fn x => I.VInt (x+i)))
     | primInterval _ _ = evalError "primInterval"
 
+
+
   fun lookup (name:string) [] = evalError ("failed lookup for "^name)
     | lookup name ((n,v)::env) =
         if (n = name) then
@@ -102,6 +104,12 @@ structure Evaluator = struct
   (*
    *   Initial environment (already in a form suitable for the environment)
    *)
+  
+  fun primMap (I.VClosure (n,e,env)) (I.VList xs) =
+    I.VList (List.map (
+      fn x => eval ((n,x)::env) e
+      ) xs)
+    | primMap _ _ = evalError "primMap"
 
   val initialEnv =
       [("add", I.VClosure ("a",
@@ -147,7 +155,13 @@ structure Evaluator = struct
            I.EPrimCall2 (primInterval,
              I.EIdent "a",
              I.EIdent "b")),
-         []))]
+         [])),
+       ("map", I.VClosure ("f",
+        I.EFun ("xs",
+          I.EPrimCall2(primMap,
+            I.EIdent "f",
+            I.EIdent "xs")),
+        []))]
 
 
 end
