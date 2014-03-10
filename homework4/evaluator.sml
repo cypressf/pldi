@@ -66,6 +66,9 @@ structure Evaluator = struct
    *
    *)
 
+  fun extract_tuples (I.VRecord tuples) = tuples
+    | extract_tuples _ = evalError "EField" 
+
 
   fun eval _ (I.EVal v) = v
     | eval env (I.EFun (n,e)) = I.VClosure (n,e,env)
@@ -76,8 +79,8 @@ structure Evaluator = struct
     | eval env (I.EApp (e1,e2)) = evalApp env (eval env e1) (eval env e2)
     | eval env (I.EPrimCall1 (f,e1)) = f (eval env e1)
     | eval env (I.EPrimCall2 (f,e1,e2)) = f (eval env e1) (eval env e2)
-    | eval env (I.ERecord fs) = evalError "ERecord not implemented"
-    | eval env (I.EField (e,s)) = evalError "EField not implemented"
+    | eval env (I.ERecord fs) = I.VRecord (map (fn (n,e) => (n, (eval env e))) fs)
+    | eval env (I.EField (e,s)) = lookup s (extract_tuples (eval env e))
     | eval env (I.EList es) = I.VList (map (eval env) es)
 
   and evalApp _ (I.VClosure (n,body,env)) v = eval ((n,v)::env) body
