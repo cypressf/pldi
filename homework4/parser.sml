@@ -250,6 +250,7 @@ structure Parser =  struct
    *             T_LBRACKET expr T_BAR T_SYM T_LARROW expr T_RBRACKET    [aterm_MAP]
    *             T_LBRACKET expr T_BAR T_SYM T_LARROW expr T_COMMA expr T_RBRACKET    [aterm_FILTER]
    *             T_LBRACE fields T_RBRACE                                [aterm_RECORD]
+   *             T_HASH T_SYM expr                                       [aterm_FIELD]
    *
    *   sym_list ::= T_SYM sym_list                    [sym_list_MULTIPLE]
    *                T_SYM                             [sym_list_SINGLE]
@@ -407,7 +408,8 @@ structure Parser =  struct
         parse_aterm_INTERVAL,
         parse_aterm_MAP,
         parse_aterm_FILTER,
-        parse_aterm_RECORD
+        parse_aterm_RECORD,
+        parse_aterm_FIELD
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -761,6 +763,18 @@ structure Parser =  struct
           | SOME (e, ts) => SOME ([(s,e)], ts))))
 
   and parse_fields_EMPTY ts = SOME ([], ts)
+
+  and parse_aterm_FIELD ts =
+    (case expect_HASH ts
+      of NONE => NONE
+      | SOME ts =>
+      (case expect_SYM ts
+        of NONE => NONE
+        | SOME (s, ts) =>
+        (case parse_expr ts
+          of NONE => NONE
+          | SOME (e, ts) => SOME (I.EField(e, s), ts) )))
+
 
   and parse_aterm_list ts =
       choose [parse_aterm_list_ATERM_LIST,
