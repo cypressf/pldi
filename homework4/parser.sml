@@ -249,12 +249,17 @@ structure Parser =  struct
    *             T_LBRACKET expr T_DDOTS expr T_RBRACKET                 [aterm_INTERVAL]
    *             T_LBRACKET expr T_BAR T_SYM T_LARROW expr T_RBRACKET    [aterm_MAP]
    *             T_LBRACKET expr T_BAR T_SYM T_LARROW expr T_COMMA expr T_RBRACKET    [aterm_FILTER]
+   *             T_LBRACE fields T_RBRACE                                [aterm_RECORD]
    *
    *   sym_list ::= T_SYM sym_list                    [sym_list_MULTIPLE]
    *                T_SYM                             [sym_list_SINGLE]
    *
    *   expr_list ::= expr T_COMMA expr_list                [expr_list_MULTIPLE]
    *                 expr                                  [expr_list_SINGLE]
+   *
+   *   fields ::= T_SYM T_EQUAL expr T_COMMA fields        [fields_MULTIPLE]
+   *              T_SYM T_EQUAL expr                       [fields_SINGLE]
+  *               <empty>                                  [fields_EMPTY]
    *)
 
 
@@ -401,7 +406,8 @@ structure Parser =  struct
         parse_aterm_MATCH,
         parse_aterm_INTERVAL,
         parse_aterm_MAP,
-        parse_aterm_FILTER
+        parse_aterm_FILTER,
+        parse_aterm_RECORD
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -710,6 +716,52 @@ structure Parser =  struct
                       of NONE => NONE
                       | SOME ts => SOME (I.EApp(I.EApp(I.EIdent "map", I.EFun(s,e1)), I.EApp(I.EApp(I.EIdent "filter", I.EFun(s,e3)), e2)), ts) )))))))))
   
+  and parse_aterm_RECORD ts =
+    (case expect_LBRACE ts
+      of NONE => NONE
+      | SOME ts =>
+      (case parse_fields ts
+        of NONE => NONE
+        | SOME (fields, ts) =>
+        (case expect_RBRACE ts
+          of NONE => NONE
+          | SOME ts => SOME (I.ERecord(fields), ts))))
+
+  and parse_fields ts =
+    choose [parse_fields_MULTIPLE,
+            parse_fields_SINGLE,
+            parse_fields_EMPTY] ts
+
+  and parse_fields_MULTIPLE ts =
+    (case expect_SYM ts
+      of NONE => NONE
+      | SOME (s, ts) =>
+      (case expect_EQUAL ts
+        of NONE => NONE
+        | SOME ts =>
+        (case parse_expr ts
+          of NONE => NONE
+          | SOME (e, ts) =>
+          (case expect_COMMA ts
+            of NONE => NONE
+            | SOME ts =>
+            (case parse_fields ts
+              of NONE => NONE
+              | SOME (fields, ts) => SOME ((s,e)::fields, ts))))))
+
+  and parse_fields_SINGLE ts =
+    (case expect_SYM ts
+      of NONE => NONE
+      | SOME (s, ts) =>
+      (case expect_EQUAL ts
+        of NONE => NONE
+        | SOME ts => 
+        (case parse_expr ts
+          of NONE => NONE
+          | SOME (e, ts) => SOME ([(s,e)], ts))))
+
+  and parse_fields_EMPTY ts = SOME ([], ts)
+
   and parse_aterm_list ts =
       choose [parse_aterm_list_ATERM_LIST,
 	      parse_aterm_list_EMPTY
