@@ -248,6 +248,7 @@ structure Parser =  struct
    *                     expr T_BAR T_SYM T_DCOLON T_SYM T_RARROW expr
    *             T_LBRACKET expr T_DDOTS expr T_RBRACKET                 [aterm_INTERVAL]
    *             T_LBRACKET expr T_BAR T_SYM T_LARROW expr T_RBRACKET    [aterm_MAP]
+   *             T_LBRACKET expr T_BAR T_SYM T_LARROW expr T_COMMA expr T_RBRACKET    [aterm_FILTER]
    *
    *   sym_list ::= T_SYM sym_list                    [sym_list_MULTIPLE]
    *                T_SYM                             [sym_list_SINGLE]
@@ -399,7 +400,8 @@ structure Parser =  struct
         parse_aterm_EXPR_LIST,
         parse_aterm_MATCH,
         parse_aterm_INTERVAL,
-        parse_aterm_MAP
+        parse_aterm_MAP,
+        parse_aterm_FILTER
 	     ] ts
 
   and parse_aterm_INT ts =
@@ -677,6 +679,36 @@ structure Parser =  struct
                 (case expect_RBRACKET ts
                   of NONE => NONE
                   | SOME ts => SOME (I.EApp(I.EApp(I.EIdent "map", I.EFun(s,e1)), e2), ts) )))))))
+  
+  (*T_LBRACKET expr T_BAR T_SYM T_LARROW expr T_COMMA expr T_RBRACKET*)
+  and parse_aterm_FILTER ts = 
+    (case expect_LBRACKET ts
+      of NONE => NONE
+      | SOME ts =>
+      (case parse_expr ts 
+        of NONE => NONE
+        | SOME (e1, ts) => 
+        (case expect_BAR ts 
+          of NONE => NONE
+          | SOME ts =>
+          (case expect_SYM ts
+            of NONE => NONE
+            | SOME (s,ts) =>
+            (case expect_LARROW ts
+              of NONE => NONE
+              | SOME ts =>
+              (case parse_expr ts 
+                of NONE => NONE
+                | SOME (e2, ts) =>
+                (case expect_COMMA ts
+                  of NONE => NONE
+                  | SOME ts =>
+                  (case parse_expr ts
+                    of NONE => NONE
+                    | SOME (e3, ts) => 
+                    (case expect_RBRACKET ts
+                      of NONE => NONE
+                      | SOME ts => SOME (I.EApp(I.EApp(I.EIdent "map", I.EFun(s,e1)), I.EApp(I.EApp(I.EIdent "filter", I.EFun(s,e3)), e2)), ts) )))))))))
   
   and parse_aterm_list ts =
       choose [parse_aterm_list_ATERM_LIST,
