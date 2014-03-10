@@ -111,6 +111,15 @@ structure Evaluator = struct
       ) xs)
     | primMap _ _ = evalError "primMap"
 
+  fun primFilter (I.VClosure (n,e,env)) (I.VList xs) =
+    I.VList (List.filter (
+      fn x =>
+        (case eval ((n,x)::env) e
+          of I.VBool b => b
+          | _ => evalError "primFilter function didn't return bool")
+      ) xs)
+    | primFilter _ _ = evalError "primFilter"
+
   val initialEnv =
       [("add", I.VClosure ("a",
 			   I.EFun ("b",
@@ -159,6 +168,12 @@ structure Evaluator = struct
        ("map", I.VClosure ("f",
         I.EFun ("xs",
           I.EPrimCall2(primMap,
+            I.EIdent "f",
+            I.EIdent "xs")),
+        [])),
+       ("filter", I.VClosure ("f",
+        I.EFun ("xs",
+          I.EPrimCall2(primFilter,
             I.EIdent "f",
             I.EIdent "xs")),
         []))]
