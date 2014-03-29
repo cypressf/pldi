@@ -6,22 +6,22 @@
 structure InternalRepresentation = struct
 
   datatype value = VInt of int
-  	         | VBool of bool
-		 | VList of (value ref) list
+  	     | VBool of bool
+		     | VList of (value ref) list
 
   and expr = EVal of value
 	   | ELet of string * expr * expr
 	   | EIf of expr * expr * expr
 	   | EIdent of string
 	   | ECall of string * expr list
-           | EPrimCall of (value list -> value) * expr list
+     | EPrimCall of (value list -> value) * expr list
 
   and stmt = SUpdate of string * expr
 	   | SIf of expr * stmt * stmt
 	   | SWhile of expr * stmt
 	   | SCall of string * expr list
 	   | SPrint of expr list
-           | SBlock of stmt list
+     | SBlock of stmt list
 	   | SPrimCall of (value list -> unit) * expr list
 	   | SVar of (string * expr * stmt)
 
