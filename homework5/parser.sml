@@ -54,25 +54,25 @@ structure Parser =  struct
                  | T_FALSE
                  | T_EQUAL
                  | T_IF
-		 | T_THEN
+                 | T_THEN
                  | T_ELSE
                  | T_LPAREN
                  | T_RPAREN
                  | T_PLUS
                  | T_TIMES
                  | T_COMMA
-		 | T_SEMICOLON
-		 | T_WHILE
-		 | T_PRINT
-		 | T_LBRACE
-		 | T_RBRACE
-		 | T_FUNCTION
-		 | T_PROCEDURE
-		 | T_VAR
-		 | T_CONST
-		 | T_LEFTARROW
-		 | T_FOR
-		 | T_LETVAR
+                 | T_SEMICOLON
+                 | T_WHILE
+                 | T_PRINT
+                 | T_LBRACE
+                 | T_RBRACE
+                 | T_FUNCTION
+                 | T_PROCEDURE
+                 | T_VAR
+                 | T_CONST
+                 | T_LEFTARROW
+                 | T_FOR
+                 | T_LETVAR
 
 
   fun stringOfToken T_LET = "T_LET"
@@ -148,10 +148,10 @@ structure Parser =  struct
     map convert [("( |\\n|\\t)+",         whitespace),
                  ("=",                    produceEqual),
                  ("\\+",                  producePlus),
-		 ("\\*",                  produceTimes),
-		 (",",                    produceComma),
-		 (";",                    produceSemiColon),
-		 ("<-",                   produceLeftArrow),
+                 ("\\*",                  produceTimes),
+                 (",",                    produceComma),
+                 (";",                    produceSemiColon),
+                 ("<-",                   produceLeftArrow),
                  ("[a-zA-Z][a-zA-Z0-9]*", produceSymbol),
                  ("~?[0-9]+",             produceInt),
                  ("\\(",                  produceLParen),
@@ -196,6 +196,7 @@ structure Parser =  struct
    *   stmt ::= T_IF expr stmt T_ELSE stmt
    *            T_IF expr stmt
    *            T_WHILE expr stmt
+   *            T_SYM "hd" T_LPAREN expr T_RPAREN T_LEFTARROW expr  [stmt_UPDATEHD]
    *            T_SYM T_LEFTARROW expr
    *            T_SYM T_LPAREN expr_list T_RPAREN
    *            T_PRINT T_LPAREN expr_list T_RPAREN
@@ -238,10 +239,10 @@ structure Parser =  struct
 
 
   datatype decl = DeclFunc of (string * string list * I.expr)
-		| DeclProc of (string * string list * I.stmt)
-		| DeclStmt of I.stmt
-		| DeclVar of string * I.expr
-		| DeclConst of string * I.expr
+                | DeclProc of (string * string list * I.stmt)
+                | DeclStmt of I.stmt
+                | DeclVar of string * I.expr
+                | DeclConst of string * I.expr
 
   fun expect token (t::ts) = if t=token then SOME ts else NONE
     | expect _ _ = NONE
@@ -252,83 +253,86 @@ structure Parser =  struct
   fun expect_SYM ((T_SYM s)::ts) = SOME (s,ts)
     | expect_SYM _ = NONE
 
+  fun expect_specific_SYM s ((T_SYM s')::ts) = if (s = s') then SOME ts else NONE
+    | expect_specific_SYM _ _ = NONE
+
   fun choose [] ts = NONE
     | choose (p::ps) ts =
         (case p ts
-	  of NONE => choose ps ts
-	   | s => s)
+          of NONE => choose ps ts
+           | s => s)
 
   fun parse_decl ts = let
     fun decl_var ts =
-	(case expect T_VAR ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case expect_SYM ts
-	       of NONE => NONE
-		| SOME (n,ts) =>
-		  (case expect T_EQUAL ts
-		    of NONE => NONE
-		     | SOME ts =>
-		       (case parse_expr ts
-			 of NONE => NONE
-			  | SOME (e,ts) => SOME (DeclVar (n,e),ts)))))
+        (case expect T_VAR ts
+          of NONE => NONE
+           | SOME ts =>
+             (case expect_SYM ts
+               of NONE => NONE
+                | SOME (n,ts) =>
+                  (case expect T_EQUAL ts
+                    of NONE => NONE
+                     | SOME ts =>
+                       (case parse_expr ts
+                         of NONE => NONE
+                          | SOME (e,ts) => SOME (DeclVar (n,e),ts)))))
     fun decl_const ts =
-	(case expect T_CONST ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case expect_SYM ts
-	       of NONE => NONE
-		| SOME (n,ts) =>
-		  (case expect T_EQUAL ts
-		    of NONE => NONE
-		     | SOME ts =>
-		       (case parse_expr ts
-			 of NONE => NONE
-			  | SOME (e,ts) => SOME (DeclConst (n,e),ts)))))
+        (case expect T_CONST ts
+          of NONE => NONE
+           | SOME ts =>
+             (case expect_SYM ts
+               of NONE => NONE
+                | SOME (n,ts) =>
+                  (case expect T_EQUAL ts
+                    of NONE => NONE
+                     | SOME ts =>
+                       (case parse_expr ts
+                         of NONE => NONE
+                          | SOME (e,ts) => SOME (DeclConst (n,e),ts)))))
     fun decl_func ts =
-	(case expect T_FUNCTION ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case expect_SYM ts
-	       of NONE => NONE
-		| SOME (n,ts) =>
-		  (case expect T_LPAREN ts
-		    of NONE => NONE
-		     | SOME ts =>
-		       (case parse_sym_list ts
-			 of NONE => NONE
-			  | SOME (ps,ts) =>
-			    (case expect T_RPAREN ts
-			      of NONE => NONE
-			       | SOME ts =>
-				 (case parse_expr ts
-				   of NONE => NONE
-				    | SOME (e,ts) =>
-				        SOME (DeclFunc (n,ps,e),ts)))))))
+        (case expect T_FUNCTION ts
+          of NONE => NONE
+           | SOME ts =>
+             (case expect_SYM ts
+               of NONE => NONE
+                | SOME (n,ts) =>
+                  (case expect T_LPAREN ts
+                    of NONE => NONE
+                     | SOME ts =>
+                       (case parse_sym_list ts
+                         of NONE => NONE
+                          | SOME (ps,ts) =>
+                            (case expect T_RPAREN ts
+                              of NONE => NONE
+                               | SOME ts =>
+                                 (case parse_expr ts
+                                   of NONE => NONE
+                                    | SOME (e,ts) =>
+                                        SOME (DeclFunc (n,ps,e),ts)))))))
     fun decl_proc ts =
-	(case expect T_PROCEDURE ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case expect_SYM ts
-	       of NONE => NONE
-		| SOME (n,ts) =>
-		  (case expect T_LPAREN ts
-		    of NONE => NONE
-		     | SOME ts =>
-		       (case parse_sym_list ts
-			 of NONE => NONE
-			  | SOME (ps,ts) =>
-			    (case expect T_RPAREN ts
-			      of NONE => NONE
-			       | SOME ts =>
-				 (case parse_stmt ts
-				   of NONE => NONE
-				    | SOME (s,ts) =>
-				        SOME (DeclProc (n,ps,s),ts)))))))
+        (case expect T_PROCEDURE ts
+          of NONE => NONE
+           | SOME ts =>
+             (case expect_SYM ts
+               of NONE => NONE
+                | SOME (n,ts) =>
+                  (case expect T_LPAREN ts
+                    of NONE => NONE
+                     | SOME ts =>
+                       (case parse_sym_list ts
+                         of NONE => NONE
+                          | SOME (ps,ts) =>
+                            (case expect T_RPAREN ts
+                              of NONE => NONE
+                               | SOME ts =>
+                                 (case parse_stmt ts
+                                   of NONE => NONE
+                                    | SOME (s,ts) =>
+                                        SOME (DeclProc (n,ps,s),ts)))))))
     fun decl_stmt ts =
-	(case parse_stmt ts
-	  of NONE => NONE
-	   | SOME (s,ts) => SOME (DeclStmt s,ts))
+        (case parse_stmt ts
+          of NONE => NONE
+           | SOME (s,ts) => SOME (DeclStmt s,ts))
   in
     choose [decl_var, decl_const, decl_func, decl_proc, decl_stmt] ts
   end
@@ -336,126 +340,146 @@ structure Parser =  struct
 
   and parse_sym_list ts =
       (case expect_SYM ts
-	of NONE => SOME ([],ts)
-	 | SOME (s,ts) =>
-	   (case expect T_COMMA ts
-	     of NONE => SOME ([s],ts)
-	      | SOME ts =>
-		(case parse_sym_list ts
-		  of NONE => NONE
-		   | SOME (ss,ts) => SOME (s::ss,ts))))
+        of NONE => SOME ([],ts)
+         | SOME (s,ts) =>
+           (case expect T_COMMA ts
+             of NONE => SOME ([s],ts)
+              | SOME ts =>
+                (case parse_sym_list ts
+                  of NONE => NONE
+                   | SOME (ss,ts) => SOME (s::ss,ts))))
 
 
   and parse_stmt ts = let
     fun stmt_IF ts =
-	(case expect T_IF ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case parse_expr ts
-	       of NONE => NONE
-		| SOME (e,ts) =>
-		  (case parse_stmt ts
-		    of NONE => NONE
-		     | SOME (s1,ts) =>
-		       (case expect T_ELSE ts
-			 of NONE => SOME (I.SIf (e,s1,I.SBlock []),ts)
-			  | SOME ts =>
-			    (case parse_stmt ts
-			      of NONE => NONE
-			       | SOME (s2,ts) =>
-				 SOME (I.SIf (e,s1,s2),ts))))))
+        (case expect T_IF ts
+          of NONE => NONE
+           | SOME ts =>
+             (case parse_expr ts
+               of NONE => NONE
+                | SOME (e,ts) =>
+                  (case parse_stmt ts
+                    of NONE => NONE
+                     | SOME (s1,ts) =>
+                       (case expect T_ELSE ts
+                         of NONE => SOME (I.SIf (e,s1,I.SBlock []),ts)
+                          | SOME ts =>
+                            (case parse_stmt ts
+                              of NONE => NONE
+                               | SOME (s2,ts) =>
+                                 SOME (I.SIf (e,s1,s2),ts))))))
     fun stmt_WHILE ts =
-	(case expect T_WHILE ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case parse_expr ts
-	       of NONE => NONE
-		| SOME (e,ts) =>
-		  (case parse_stmt ts
-		    of NONE => NONE
-		     | SOME (s,ts) =>
-		       SOME (I.SWhile (e,s),ts))))
+        (case expect T_WHILE ts
+          of NONE => NONE
+           | SOME ts =>
+             (case parse_expr ts
+               of NONE => NONE
+                | SOME (e,ts) =>
+                  (case parse_stmt ts
+                    of NONE => NONE
+                     | SOME (s,ts) =>
+                       SOME (I.SWhile (e,s),ts))))
     fun stmt_UPDATE ts =
-	(case expect_SYM ts
-	  of NONE => NONE
-	   | SOME (n,ts) =>
-	     (case expect T_LEFTARROW ts
-	       of NONE => NONE
-		| SOME ts =>
-		  (case parse_expr ts
-		    of NONE => NONE
-		     | SOME (e,ts) => SOME (I.SUpdate (n,e),ts))))
+        (case expect_SYM ts
+          of NONE => NONE
+           | SOME (n,ts) =>
+             (case expect T_LEFTARROW ts
+               of NONE => NONE
+                | SOME ts =>
+                  (case parse_expr ts
+                    of NONE => NONE
+                     | SOME (e,ts) => SOME (I.SUpdate (n,e),ts))))
     fun stmt_CALL ts =
-	(case expect_SYM ts
-	  of NONE => NONE
-	   | SOME (s,ts) =>
-	     (case expect T_LPAREN ts
-	       of NONE => NONE
-		| SOME ts =>
-		  (case parse_expr_list ts
-		    of NONE => NONE
-		     | SOME (es,ts) =>
-		       (case expect T_RPAREN ts
-			 of NONE => NONE
-			  | SOME ts => SOME (I.SCall (s,es),ts)))))
+        (case expect_SYM ts
+          of NONE => NONE
+           | SOME (s,ts) =>
+             (case expect T_LPAREN ts
+               of NONE => NONE
+                | SOME ts =>
+                  (case parse_expr_list ts
+                    of NONE => NONE
+                     | SOME (es,ts) =>
+                       (case expect T_RPAREN ts
+                         of NONE => NONE
+                          | SOME ts => SOME (I.SCall (s,es),ts)))))
     fun stmt_PRINT ts =
-	(case expect T_PRINT ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case expect T_LPAREN ts
-	       of NONE => NONE
-		| SOME ts =>
-		  (case parse_expr_list ts
-		    of NONE => NONE
-		     | SOME (es,ts) =>
-		       (case expect T_RPAREN ts
-			 of NONE => NONE
-			  | SOME ts => SOME (I.SPrint es,ts)))))
+        (case expect T_PRINT ts
+          of NONE => NONE
+           | SOME ts =>
+             (case expect T_LPAREN ts
+               of NONE => NONE
+                | SOME ts =>
+                  (case parse_expr_list ts
+                    of NONE => NONE
+                     | SOME (es,ts) =>
+                       (case expect T_RPAREN ts
+                         of NONE => NONE
+                          | SOME ts => SOME (I.SPrint es,ts)))))
     fun stmt_BLOCK_EMPTY ts =
-	(case expect T_LBRACE ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case expect T_RBRACE ts
-	       of NONE => NONE
-		| SOME ts => SOME (I.SBlock [],ts)))
+        (case expect T_LBRACE ts
+          of NONE => NONE
+           | SOME ts =>
+             (case expect T_RBRACE ts
+               of NONE => NONE
+                | SOME ts => SOME (I.SBlock [],ts)))
     fun stmt_BLOCK ts =
-	(case expect T_LBRACE ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case parse_stmt_list ts
-	       of NONE => NONE
-		| SOME (ss,ts) =>
-		  (case expect T_RBRACE ts
-		    of NONE => NONE
-		     | SOME ts => SOME (I.SBlock ss,ts))))
+        (case expect T_LBRACE ts
+          of NONE => NONE
+           | SOME ts =>
+             (case parse_stmt_list ts
+               of NONE => NONE
+                | SOME (ss,ts) =>
+                  (case expect T_RBRACE ts
+                    of NONE => NONE
+                     | SOME ts => SOME (I.SBlock ss,ts))))
+    fun stmt_UPDATEHD ts =
+        (case expect_specific_SYM "hd" ts
+          of NONE => NONE
+          | SOME ts =>
+          (case expect T_LPAREN ts
+            of NONE => NONE
+            | SOME ts =>
+            (case parse_expr ts
+              of NONE => NONE
+              | SOME (e1, ts) =>
+              (case expect T_RPAREN ts
+                of NONE => NONE
+                | SOME ts =>
+                (case expect T_LEFTARROW ts
+                  of NONE => NONE
+                  | SOME ts =>
+                  (case parse_expr ts
+                    of NONE => NONE
+                    | SOME (e2, ts) => SOME (I.SCall ("updateHd",[e1,e2]),ts)))))))
+
 
   in
-    choose [stmt_IF, stmt_WHILE, stmt_UPDATE, stmt_CALL, stmt_PRINT,
-	    stmt_BLOCK_EMPTY, stmt_BLOCK ] ts
+    choose [stmt_IF, stmt_WHILE, stmt_UPDATEHD, stmt_UPDATE, stmt_CALL, stmt_PRINT,
+            stmt_BLOCK_EMPTY, stmt_BLOCK] ts
   end
 
 
   and parse_stmt_list ts =
       (case parse_stmt ts
-	of NONE => NONE
-	 | SOME (s,ts) =>
-	   (case expect T_SEMICOLON ts
-	     of NONE => SOME ([s],ts)
-	      | SOME ts =>
-		(case parse_stmt_list ts
-		  of NONE => NONE
-		   | SOME (ss,ts) => SOME (s::ss,ts))))
+        of NONE => NONE
+         | SOME (s,ts) =>
+           (case expect T_SEMICOLON ts
+             of NONE => SOME ([s],ts)
+              | SOME ts =>
+                (case parse_stmt_list ts
+                  of NONE => NONE
+                   | SOME (ss,ts) => SOME (s::ss,ts))))
 
 
   and parse_expr ts = let
     fun expr_EQUAL ts =
-	(case parse_eterm ts
-	  of NONE => NONE
-	   | SOME (e1,ts) =>
+        (case parse_eterm ts
+          of NONE => NONE
+           | SOME (e1,ts) =>
              (case expect T_EQUAL ts
                of NONE => NONE
-		| SOME ts =>
-		  (case parse_eterm ts
+                | SOME ts =>
+                  (case parse_eterm ts
                     of NONE => NONE
                      | SOME (e2,ts) => SOME (I.ECall ("=", [e1,e2]),ts))))
     fun expr_ETERM ts = parse_eterm ts
@@ -466,13 +490,13 @@ structure Parser =  struct
 
   and parse_eterm ts = let
     fun eterm_PLUS ts =
-	(case parse_term ts
-	  of NONE => NONE
-	   | SOME (e1,ts) =>
+        (case parse_term ts
+          of NONE => NONE
+           | SOME (e1,ts) =>
              (case expect T_PLUS ts
                of NONE => NONE
-		| SOME ts =>
-		  (case parse_term ts
+                | SOME ts =>
+                  (case parse_term ts
                     of NONE => NONE
                      | SOME (e2,ts) => SOME (I.ECall ("+", [e1,e2]),ts))))
     fun eterm_TERM ts = parse_term ts
@@ -483,100 +507,100 @@ structure Parser =  struct
 
   and parse_term ts = let
     fun term_INT ts =
-	(case expect_INT ts
-	  of NONE => NONE
-	   | SOME (i,ts) => SOME (I.EVal (I.VInt i),ts))
+        (case expect_INT ts
+          of NONE => NONE
+           | SOME (i,ts) => SOME (I.EVal (I.VInt i),ts))
     fun term_TRUE ts =
-	(case expect T_TRUE ts
-	  of NONE => NONE
-	   | SOME ts => SOME (I.EVal (I.VBool true),ts))
+        (case expect T_TRUE ts
+          of NONE => NONE
+           | SOME ts => SOME (I.EVal (I.VBool true),ts))
     fun term_FALSE ts =
-	(case expect T_FALSE ts
-	  of NONE => NONE
-	   | SOME ts => SOME (I.EVal (I.VBool false),ts))
+        (case expect T_FALSE ts
+          of NONE => NONE
+           | SOME ts => SOME (I.EVal (I.VBool false),ts))
     fun term_CALL ts =
-	(case expect_SYM ts
-	  of NONE => NONE
-	   | SOME (s,ts) =>
-	     (case expect T_LPAREN ts
-	       of NONE => NONE
-		| SOME ts =>
-		  (case parse_expr_list ts
-		    of NONE => NONE
-		     | SOME (es,ts) =>
-		       (case expect T_RPAREN ts
-			 of NONE => NONE
-			  | SOME ts => SOME (I.ECall (s,es),ts)))))
+        (case expect_SYM ts
+          of NONE => NONE
+           | SOME (s,ts) =>
+             (case expect T_LPAREN ts
+               of NONE => NONE
+                | SOME ts =>
+                  (case parse_expr_list ts
+                    of NONE => NONE
+                     | SOME (es,ts) =>
+                       (case expect T_RPAREN ts
+                         of NONE => NONE
+                          | SOME ts => SOME (I.ECall (s,es),ts)))))
     fun term_SYM ts =
-	(case expect_SYM ts
-	  of NONE => NONE
-	   | SOME (s,ts) => SOME (I.EIdent s,ts))
+        (case expect_SYM ts
+          of NONE => NONE
+           | SOME (s,ts) => SOME (I.EIdent s,ts))
     fun term_PARENS ts =
-	(case expect T_LPAREN ts
-	  of NONE => NONE
-	   | SOME ts =>
+        (case expect T_LPAREN ts
+          of NONE => NONE
+           | SOME ts =>
              (case parse_expr ts
                of NONE => NONE
-		| SOME (e,ts) =>
-		  (case expect T_RPAREN ts
+                | SOME (e,ts) =>
+                  (case expect T_RPAREN ts
                     of NONE => NONE
                      | SOME ts => SOME (e,ts))))
     and term_LET ts =
-	(case expect T_LET ts
-	  of NONE => NONE
-	   | SOME ts =>
+        (case expect T_LET ts
+          of NONE => NONE
+           | SOME ts =>
              (case expect_SYM ts
                of NONE => NONE
-		| SOME (s,ts) =>
-		  (case expect T_EQUAL ts
+                | SOME (s,ts) =>
+                  (case expect T_EQUAL ts
                     of NONE => NONE
                      | SOME ts =>
                        (case parse_expr ts
-			 of NONE => NONE
-			  | SOME (e1,ts) =>
+                         of NONE => NONE
+                          | SOME (e1,ts) =>
                             (case expect T_IN ts
                               of NONE => NONE
                                | SOME ts =>
-				 (case parse_expr ts
-				   of NONE => NONE
+                                 (case parse_expr ts
+                                   of NONE => NONE
                                     | SOME (e2,ts) => SOME (I.ELet (s,e1,e2),ts)))))))
     fun term_IF ts =
-	(case expect T_IF ts
-	  of NONE => NONE
-	   | SOME ts =>
-	     (case parse_expr ts
-	       of NONE => NONE
-		| SOME (e1,ts) =>
-		  (case expect T_THEN ts
-		    of NONE => NONE
-		     | SOME ts =>
-		       (case parse_expr ts
-			 of NONE => NONE
-			  | SOME (e2,ts) =>
-			    (case expect T_ELSE ts
-			      of NONE => NONE
-			       | SOME ts =>
-				 (case parse_expr ts
-				   of NONE => NONE
-				    | SOME (e3,ts) =>
-				        SOME (I.EIf (e1,e2,e3),ts)))))))
+        (case expect T_IF ts
+          of NONE => NONE
+           | SOME ts =>
+             (case parse_expr ts
+               of NONE => NONE
+                | SOME (e1,ts) =>
+                  (case expect T_THEN ts
+                    of NONE => NONE
+                     | SOME ts =>
+                       (case parse_expr ts
+                         of NONE => NONE
+                          | SOME (e2,ts) =>
+                            (case expect T_ELSE ts
+                              of NONE => NONE
+                               | SOME ts =>
+                                 (case parse_expr ts
+                                   of NONE => NONE
+                                    | SOME (e3,ts) =>
+                                        SOME (I.EIf (e1,e2,e3),ts)))))))
 
   in
     choose [term_INT, term_TRUE, term_FALSE,
-	    term_CALL, term_SYM, term_PARENS, term_IF, term_LET] ts
+            term_CALL, term_SYM, term_PARENS, term_IF, term_LET] ts
   end
 
 
   and parse_expr_list ts =
       (case parse_expr ts
-	of NONE => SOME ([],ts)
-	 | SOME (e,ts) =>
-	   (case expect T_COMMA ts
-	     of NONE => SOME ([e],ts)
-	      | SOME ts =>
-		(case parse_expr_list ts
-		  of NONE => NONE
-		   | SOME (es,ts) => SOME (e::es,ts))))
+        of NONE => SOME ([],ts)
+         | SOME (e,ts) =>
+           (case expect T_COMMA ts
+             of NONE => SOME ([e],ts)
+              | SOME ts =>
+                (case parse_expr_list ts
+                  of NONE => NONE
+                   | SOME (es,ts) => SOME (e::es,ts))))
 
 
   fun parseStmt ts =
