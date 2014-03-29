@@ -1,4 +1,4 @@
-(* 
+(*
  *   CODE FOR HOMEWORK 5
  *)
 
@@ -19,17 +19,17 @@ structure Evaluator = struct
    *)
 
   datatype entry = Func of (string list * I.expr * (string * entry) list)
-		 | Proc of (string list * I.stmt * (string * entry) list)
-		 | Var of I.value ref
-		 | Con of I.value
+     | Proc of (string list * I.stmt * (string * entry) list)
+     | Var of I.value ref
+     | Con of I.value
 
 
-			 
+
   fun lookup name [] = evalError ["failed lookup for",name]
-    | lookup name ((n,v)::env) = 
-        if (n = name) then 
-	  v
-	else lookup name env 
+    | lookup name ((n,v)::env) =
+        if (n = name) then
+    v
+  else lookup name env
 
 
   fun zip [] [] = []
@@ -42,7 +42,7 @@ structure Evaluator = struct
 
   (*
    *   Evaluation functions
-   * 
+   *
    *)
 
 
@@ -50,72 +50,72 @@ structure Evaluator = struct
 
     | eval env (I.ELet (name,e1,e2)) = eval ((name,Con (eval env e1))::env) e2
 
-    | eval env (I.EIf (e1,e2,e3)) = 
+    | eval env (I.EIf (e1,e2,e3)) =
          (case (eval env e1)
-	   of I.VBool true => eval env e2
-	    | I.VBool false => eval env e3
-	    | _ => evalError ["non-Boolean condition"])
+     of I.VBool true => eval env e2
+      | I.VBool false => eval env e3
+      | _ => evalError ["non-Boolean condition"])
 
-    | eval env (I.EIdent n) = 
+    | eval env (I.EIdent n) =
         (case lookup n env
-	  of Var r => !r
-	   | Con v => v
-	   | _ => evalError ["identifier", n, "not bound to a variable or constant"])
+    of Var r => !r
+     | Con v => v
+     | _ => evalError ["identifier", n, "not bound to a variable or constant"])
 
     | eval env (I.ECall (n,es)) = let
-	val vs = map (fn e => Con (eval env e)) es
+  val vs = map (fn e => Con (eval env e)) es
         val f = lookup n env
       in
         case f
-	 of Func (ps,body,env) => 
-	      eval ((zip ps vs)@[(n,f)]@env) body
-	  | _ => evalError ["called identifier not a function"]
+   of Func (ps,body,env) =>
+        eval ((zip ps vs)@[(n,f)]@env) body
+    | _ => evalError ["called identifier not a function"]
       end
 
     | eval env (I.EPrimCall (f,es)) = f (map (eval env) es)
-      
 
 
 
 
-  and exec env (I.SIf (e,s1,s2)) = 
-         (case eval env e 
-	   of I.VBool true => exec env s1
-	    | I.VBool false => exec env s2
-	    | _ => evalError ["condition not a Boolean value"])
 
-    | exec env (I.SWhile (e,s)) = 
+  and exec env (I.SIf (e,s1,s2)) =
          (case eval env e
-	   of I.VBool true => 
-	        (exec env s; exec env (I.SWhile (e,s)))
-	    | I.VBool false => ()
-	    | _ => evalError ["condition not a Boolean value"])
+     of I.VBool true => exec env s1
+      | I.VBool false => exec env s2
+      | _ => evalError ["condition not a Boolean value"])
+
+    | exec env (I.SWhile (e,s)) =
+         (case eval env e
+     of I.VBool true =>
+          (exec env s; exec env (I.SWhile (e,s)))
+      | I.VBool false => ()
+      | _ => evalError ["condition not a Boolean value"])
 
     | exec env (I.SCall (n,es)) = let
-	val vs = map (fn e => Var (ref (eval env e))) es
+  val vs = map (fn e => Var (ref (eval env e))) es
         val p = lookup n env
       in
-	case p
-	 of Proc (ps,body,env) => 
-	      exec ((zip ps vs)@[(n,p)]@env) body
-	  | _ => evalError ["called identifier not a procedure"]
+  case p
+   of Proc (ps,body,env) =>
+        exec ((zip ps vs)@[(n,p)]@env) body
+    | _ => evalError ["called identifier not a procedure"]
       end
 
-    | exec env (I.SPrint es) = 
-      (print (String.concatWith " " 
-	      (map (fn e => I.stringOfValue (eval env e)) es));
+    | exec env (I.SPrint es) =
+      (print (String.concatWith " "
+        (map (fn e => I.stringOfValue (eval env e)) es));
        print "\n")
 
     | exec env (I.SBlock []) = ()
-    | exec env (I.SBlock (s::ss)) = 
+    | exec env (I.SBlock (s::ss)) =
         (exec env s; exec env (I.SBlock ss))
 
     | exec env (I.SUpdate (n,e)) = let
-	val v = eval env e
+  val v = eval env e
       in
-	case lookup n env
-	 of Var r => (r := v)
-	  | _ => evalError ["identifier", n, "not a variable"]
+  case lookup n env
+   of Var r => (r := v)
+    | _ => evalError ["identifier", n, "not a variable"]
       end
 
     | exec env (I.SPrimCall (f,es)) = f (map (eval env) es)
@@ -123,10 +123,10 @@ structure Evaluator = struct
     | exec env (I.SVar (n,e,s)) = evalError ["exec/SVar not implemented"]
 
 
-        
 
 
-  (* 
+
+  (*
    *   Initial environment and primitive operations
    *)
 
@@ -136,23 +136,26 @@ structure Evaluator = struct
   fun primEq [I.VInt a, I.VInt b] = I.VBool (a=b)
     | primEq [I.VBool a, I.VBool b] = I.VBool (a=b)
     | primEq [I.VList [], I.VList []] = I.VBool true
-    | primEq [I.VList (r::rs), I.VList (s::ss)] = 
+    | primEq [I.VList (r::rs), I.VList (s::ss)] =
         (case primEq [!r,!s]
-	  of I.VBool true => primEq [I.VList rs, I.VList ss]
+    of I.VBool true => primEq [I.VList rs, I.VList ss]
            | _ => I.VBool false)
     | primEq [_,_] = I.VBool false
     | primEq _ = evalError ["type error in primEq"]
 
+  val primNil = (I.VList [])
 
-  val initialEnv = 
+
+  val initialEnv =
       [("+", Func (["a","b"], I.EPrimCall (primPlus,
-					   [I.EIdent "a",
-					    I.EIdent "b"]),
-		    [])),
+             [I.EIdent "a",
+              I.EIdent "b"]),
+        [])),
        ("=", Func (["a","b"], I.EPrimCall (primEq,
-					   [I.EIdent "a",
-					    I.EIdent "b"]),
-		    []))
+             [I.EIdent "a",
+              I.EIdent "b"]),
+        [])),
+        ("nil", Con primNil)
       ]
 
 
@@ -182,5 +185,5 @@ structure Evaluator = struct
   in
     (n,Con v)::env
   end
-				 
+
 end

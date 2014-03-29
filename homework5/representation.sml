@@ -1,4 +1,4 @@
-(* 
+(*
  *   CODE FOR HOMEWORK 5
  *)
 
@@ -8,7 +8,7 @@ structure InternalRepresentation = struct
   datatype value = VInt of int
   	         | VBool of bool
 		 | VList of (value ref) list
-			    
+
   and expr = EVal of value
 	   | ELet of string * expr * expr
 	   | EIf of expr * expr * expr
@@ -29,7 +29,7 @@ structure InternalRepresentation = struct
   fun $+ ss = String.concatWith "," ss
   fun strCon n f xs = $ [n," (", $+ (map f xs), ")"]
   fun strS s = "\""^s^"\""
-	       
+
 
   fun strV (VInt i) = $ ["VInt ",Int.toString i]
     | strV (VBool true) = "VBool true"
@@ -49,8 +49,8 @@ structure InternalRepresentation = struct
     | strSt (SBlock ss) = $ ["SBlock [",$+ (map strSt ss),"]"]
     | strSt (SPrimCall (f,es)) = strCon "SPrimCall" strE es
     | strSt (SVar (n,e,s)) = $ ["SVar (",strS n,",",strE e,",",strSt s,")"]
-			 
-			 
+
+
   fun stringOfExpr e = strE e
 
   fun stringOfStmt s = strSt s
@@ -58,13 +58,13 @@ structure InternalRepresentation = struct
   fun stringOfValue (VInt i) = Int.toString i
     | stringOfValue (VBool true) = "true"
     | stringOfValue (VBool false) = "false"
-    | stringOfValue (VList rl) = 
-      String.concat ["[", 
-		     String.concatWith "," 
+    | stringOfValue (VList rl) =
+      String.concat ["[",
+		     String.concatWith ","
 				       (map (fn r => stringOfValue (!r)) rl),
 		     "]"]
 
   fun printValue v = (print (stringOfValue v);
 		      print "\n")
-		       
+
 end
