@@ -202,6 +202,7 @@ structure Parser =  struct
    *            T_PRINT T_LPAREN expr_list T_RPAREN
    *            T_LBRACE T_RBRACE
    *            T_LBRACE stmt_list T_RBRACE
+   *            T_LETVAR T_SYM T_EQUAL expr T_IN stmt [stmt_LETVAR]
    *
    *   stmt_list ::= stmt T_SEMICOLON stmt_list
    *                 stmt
@@ -452,10 +453,29 @@ structure Parser =  struct
                     of NONE => NONE
                     | SOME (e2, ts) => SOME (I.SCall ("updateHd",[e1,e2]),ts)))))))
 
+    fun stmt_LETVAR ts = 
+      (case expect T_LETVAR ts
+        of NONE => NONE
+        | SOME ts =>
+        (case expect_SYM ts
+          of NONE => NONE
+          | SOME (x,ts) =>
+          (case expect T_EQUAL ts
+            of NONE => NONE
+            | SOME ts =>
+            (case parse_expr ts
+              of NONE => NONE
+              | SOME (e, ts) =>
+              (case expect T_IN ts
+                of NONE => NONE
+                | SOME ts =>
+                (case parse_stmt ts
+                  of NONE => NONE
+                  | SOME (s, ts) => SOME (I.SVar(x,e,s),ts) ))))))
 
   in
     choose [stmt_IF, stmt_WHILE, stmt_UPDATEHD, stmt_UPDATE, stmt_CALL, stmt_PRINT,
-            stmt_BLOCK_EMPTY, stmt_BLOCK] ts
+            stmt_BLOCK_EMPTY, stmt_BLOCK, stmt_LETVAR] ts
   end
 
 
