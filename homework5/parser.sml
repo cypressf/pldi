@@ -478,17 +478,41 @@ structure Parser =  struct
             stmt_BLOCK_EMPTY, stmt_BLOCK, stmt_LETVAR] ts
   end
 
+  and decl_var ts =
+    (case expect T_VAR ts
+      of NONE => NONE
+       | SOME ts =>
+         (case expect_SYM ts
+           of NONE => NONE
+            | SOME (n,ts) =>
+              (case expect T_EQUAL ts
+                of NONE => NONE
+                 | SOME ts =>
+                   (case parse_expr ts
+                     of NONE => NONE
+                      | SOME (e,ts) => SOME (DeclVar (n,e),ts)))))
 
   and parse_stmt_list ts =
-      (case parse_stmt ts
-        of NONE => NONE
-         | SOME (s,ts) =>
-           (case expect T_SEMICOLON ts
-             of NONE => SOME ([s],ts)
-              | SOME ts =>
-                (case parse_stmt_list ts
-                  of NONE => NONE
-                   | SOME (ss,ts) => SOME (s::ss,ts))))
+      (case decl_var ts 
+        of NONE =>
+          (case parse_stmt ts
+            of NONE => NONE         
+             | SOME (s,ts) =>
+               (case expect T_SEMICOLON ts
+                 of NONE => SOME ([s],ts)
+                  | SOME ts =>
+                    (case parse_stmt_list ts
+                      of NONE => NONE
+                       | SOME (ss,ts) => SOME (s::ss,ts))))
+        
+        | SOME (DeclVar (n,e), ts) => 
+          (case expect T_SEMICOLON ts
+            of NONE => SOME ([I.SVar(n,e, (I.SBlock []))], ts)
+            | SOME ts =>
+            (case parse_stmt_list ts 
+              of NONE => NONE
+              | SOME (ss, ts) => SOME ([I.SVar(n,e, (I.SBlock ss))], ts))))
+        
 
 
   and parse_expr ts = let
