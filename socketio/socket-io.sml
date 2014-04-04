@@ -15,13 +15,13 @@ structure SocketIO =
             
         local 
             fun rd (s) = let
-		val (haddr, port) = 
-		    INetSock.fromAddr (Socket.Ctl.getSockName s)
-		val sockName = String.concat [NetHostDB.toString haddr,
-					      ":",
-					      Int.toString port]
-	    in
-		TPIO.RD {name = sockName,
+                val (haddr, port) = 
+                    INetSock.fromAddr (Socket.Ctl.getSockName s)
+                val sockName = String.concat [NetHostDB.toString haddr,
+                                              ":",
+                                              Int.toString port]
+            in
+                TPIO.RD {name = sockName,
                          chunkSize = Socket.Ctl.getRCVBUF s,
                          readVec = SOME(fn sz => Byte.bytesToString(S.recvVec (s,sz))),
                          readArr = NONE,
@@ -36,22 +36,22 @@ structure SocketIO =
                          verifyPos = NONE,
                          close = fn () => Socket.close s,
                          ioDesc = NONE}
-	    end
+            end
 
             fun wr (s) = let
-		val (haddr, port) = INetSock.fromAddr (Socket.Ctl.getSockName s)
-		val sockName = String.concat [NetHostDB.toString haddr,
-					      ":",
-					      Int.toString port]
-		fun writeVec buffer = let
-		    val (str,i,sz) = CharVectorSlice.base buffer
-		    val slice = 
-			Word8VectorSlice.slice (Byte.stringToBytes(str),i,SOME sz)
-		in
-		    S.sendVec (s,slice)
-		end 
-	    in
-		TPIO.WR {name = sockName,
+                val (haddr, port) = INetSock.fromAddr (Socket.Ctl.getSockName s)
+                val sockName = String.concat [NetHostDB.toString haddr,
+                                              ":",
+                                              Int.toString port]
+                fun writeVec buffer = let
+                    val (str,i,sz) = CharVectorSlice.base buffer
+                    val slice = 
+                        Word8VectorSlice.slice (Byte.stringToBytes(str),i,SOME sz)
+                in
+                    S.sendVec (s,slice)
+                end 
+            in
+                TPIO.WR {name = sockName,
                          chunkSize = Socket.Ctl.getSNDBUF s,
                          writeVec = SOME (writeVec),
                          writeArr = NONE,
@@ -65,7 +65,7 @@ structure SocketIO =
                          verifyPos = NONE,
                          close = fn () => Socket.close s,
                          ioDesc = NONE}
-	    end
+            end
         in
             
             fun openSocket (s) = 

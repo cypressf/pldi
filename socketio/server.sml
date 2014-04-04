@@ -2,9 +2,9 @@
 structure Server = struct
 
   val traceFlag = ref true
-		  
+                  
   fun trace s = if (!traceFlag) then 
-		  print (concat ["*** ",s," ***\n"])
+                  print (concat ["*** ",s," ***\n"])
                 else ()
 
 
